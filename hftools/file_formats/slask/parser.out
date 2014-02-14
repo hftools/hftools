@@ -1,0 +1,325 @@
+Created by PLY version 3.4 (http://www.dabeaz.com/ply)
+
+Unused terminals:
+
+    COMMENT
+    INFOLINE
+
+Grammar
+
+Rule 0     S' -> p_data_lines
+Rule 1     p_data_lines -> data_lines data_line
+Rule 2     p_data_lines -> data_line
+Rule 3     data_line -> numbers NEWLINE
+Rule 4     data_line -> numbers
+Rule 5     numbers -> NUMBER
+Rule 6     numbers -> numbers NUMBER
+
+Terminals, with rules where they appear
+
+COMMENT              : 
+INFOLINE             : 
+NEWLINE              : 3
+NUMBER               : 5 6
+error                : 
+
+Nonterminals, with rules where they appear
+
+data_line            : 1 2
+data_lines           : 1
+numbers              : 3 4 6
+p_data_lines         : 0
+
+NT NEWLINE
+Rule 16    numbers -> NUMBER
+Rule 17    numbers -> numbers NUMBER
+
+Terminals, with rules where they appear
+
+COMMENT              : 6 9 10 15
+INFOLINE             : 5 6
+NEWLINE              : 5 6 10 14 15
+NUMBER               : 16 17
+error                : 
+
+Nonterminals, with rules where they appear
+
+comment              : 7 8
+comments             : 2 4 8
+data_line            : 11 12
+data_lines           : 3 4 12
+infoline             : 3 4
+numbers              : 13 14 15 17
+touchstone           : 0
+touchstone1          : 1 2
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . touchstone
+    (1) touchstone -> . touchstone1
+    (2) touchstone -> . comments touchstone1
+    (3) touchstone1 -> . infoline data_lines
+    (4) touchstone1 -> . infoline data_lines comments
+    (7) comments -> . comment
+    (8) comments -> . comments comment
+    (5) infoline -> . INFOLINE NEWLINE
+    (6) infoline -> . INFOLINE COMMENT NEWLINE
+    (9) comment -> . COMMENT
+    (10) comment -> . COMMENT NEWLINE
+
+    INFOLINE        shift and go to state 4
+    COMMENT         shift and go to state 2
+
+    comment                        shift and go to state 1
+    touchstone1                    shift and go to state 3
+    comments                       shift and go to state 5
+    infoline                       shift and go to state 6
+    touchstone                     shift and go to state 7
+
+state 1
+
+    (7) comments -> comment .
+
+    COMMENT         reduce using rule 7 (comments -> comment .)
+    INFOLINE        reduce using rule 7 (comments -> comment .)
+    $end            reduce using rule 7 (comments -> comment .)
+
+
+state 2
+
+    (9) comment -> COMMENT .
+    (10) comment -> COMMENT . NEWLINE
+
+    COMMENT         reduce using rule 9 (comment -> COMMENT .)
+    INFOLINE        reduce using rule 9 (comment -> COMMENT .)
+    $end            reduce using rule 9 (comment -> COMMENT .)
+    NEWLINE         shift and go to state 8
+
+
+state 3
+
+    (1) touchstone -> touchstone1 .
+
+    $end            reduce using rule 1 (touchstone -> touchstone1 .)
+
+
+state 4
+
+    (5) infoline -> INFOLINE . NEWLINE
+    (6) infoline -> INFOLINE . COMMENT NEWLINE
+
+    NEWLINE         shift and go to state 10
+    COMMENT         shift and go to state 9
+
+
+state 5
+
+    (2) touchstone -> comments . touchstone1
+    (8) comments -> comments . comment
+    (3) touchstone1 -> . infoline data_lines
+    (4) touchstone1 -> . infoline data_lines comments
+    (9) comment -> . COMMENT
+    (10) comment -> . COMMENT NEWLINE
+    (5) infoline -> . INFOLINE NEWLINE
+    (6) infoline -> . INFOLINE COMMENT NEWLINE
+
+    COMMENT         shift and go to state 2
+    INFOLINE        shift and go to state 4
+
+    comment                        shift and go to state 11
+    infoline                       shift and go to state 6
+    touchstone1                    shift and go to state 12
+
+state 6
+
+    (3) touchstone1 -> infoline . data_lines
+    (4) touchstone1 -> infoline . data_lines comments
+    (11) data_lines -> . data_line
+    (12) data_lines -> . data_lines data_line
+    (13) data_line -> . numbers
+    (14) data_line -> . numbers NEWLINE
+    (15) data_line -> . numbers COMMENT NEWLINE
+    (16) numbers -> . NUMBER
+    (17) numbers -> . numbers NUMBER
+
+    NUMBER          shift and go to state 14
+
+    data_line                      shift and go to state 13
+    data_lines                     shift and go to state 16
+    numbers                        shift and go to state 15
+
+state 7
+
+    (0) S' -> touchstone .
+
+
+
+state 8
+
+    (10) comment -> COMMENT NEWLINE .
+
+    COMMENT         reduce using rule 10 (comment -> COMMENT NEWLINE .)
+    INFOLINE        reduce using rule 10 (comment -> COMMENT NEWLINE .)
+    $end            reduce using rule 10 (comment -> COMMENT NEWLINE .)
+
+
+state 9
+
+    (6) infoline -> INFOLINE COMMENT . NEWLINE
+
+    NEWLINE         shift and go to state 17
+
+
+state 10
+
+    (5) infoline -> INFOLINE NEWLINE .
+
+    NUMBER          reduce using rule 5 (infoline -> INFOLINE NEWLINE .)
+
+
+state 11
+
+    (8) comments -> comments comment .
+
+    COMMENT         reduce using rule 8 (comments -> comments comment .)
+    INFOLINE        reduce using rule 8 (comments -> comments comment .)
+    $end            reduce using rule 8 (comments -> comments comment .)
+
+
+state 12
+
+    (2) touchstone -> comments touchstone1 .
+
+    $end            reduce using rule 2 (touchstone -> comments touchstone1 .)
+
+
+state 13
+
+    (11) data_lines -> data_line .
+
+    COMMENT         reduce using rule 11 (data_lines -> data_line .)
+    NUMBER          reduce using rule 11 (data_lines -> data_line .)
+    $end            reduce using rule 11 (data_lines -> data_line .)
+
+
+state 14
+
+    (16) numbers -> NUMBER .
+
+    NEWLINE         reduce using rule 16 (numbers -> NUMBER .)
+    COMMENT         reduce using rule 16 (numbers -> NUMBER .)
+    NUMBER          reduce using rule 16 (numbers -> NUMBER .)
+    $end            reduce using rule 16 (numbers -> NUMBER .)
+
+
+state 15
+
+    (13) data_line -> numbers .
+    (14) data_line -> numbers . NEWLINE
+    (15) data_line -> numbers . COMMENT NEWLINE
+    (17) numbers -> numbers . NUMBER
+
+  ! shift/reduce conflict for COMMENT resolved as shift
+  ! shift/reduce conflict for NUMBER resolved as shift
+    $end            reduce using rule 13 (data_line -> numbers .)
+    NEWLINE         shift and go to state 19
+    COMMENT         shift and go to state 18
+    NUMBER          shift and go to state 20
+
+  ! COMMENT         [ reduce using rule 13 (data_line -> numbers .) ]
+  ! NUMBER          [ reduce using rule 13 (data_line -> numbers .) ]
+
+
+state 16
+
+    (3) touchstone1 -> infoline data_lines .
+    (4) touchstone1 -> infoline data_lines . comments
+    (12) data_lines -> data_lines . data_line
+    (7) comments -> . comment
+    (8) comments -> . comments comment
+    (13) data_line -> . numbers
+    (14) data_line -> . numbers NEWLINE
+    (15) data_line -> . numbers COMMENT NEWLINE
+    (9) comment -> . COMMENT
+    (10) comment -> . COMMENT NEWLINE
+    (16) numbers -> . NUMBER
+    (17) numbers -> . numbers NUMBER
+
+    $end            reduce using rule 3 (touchstone1 -> infoline data_lines .)
+    COMMENT         shift and go to state 2
+    NUMBER          shift and go to state 14
+
+    comment                        shift and go to state 1
+    data_line                      shift and go to state 21
+    comments                       shift and go to state 22
+    numbers                        shift and go to state 15
+
+state 17
+
+    (6) infoline -> INFOLINE COMMENT NEWLINE .
+
+    NUMBER          reduce using rule 6 (infoline -> INFOLINE COMMENT NEWLINE .)
+
+
+state 18
+
+    (15) data_line -> numbers COMMENT . NEWLINE
+
+    NEWLINE         shift and go to state 23
+
+
+state 19
+
+    (14) data_line -> numbers NEWLINE .
+
+    COMMENT         reduce using rule 14 (data_line -> numbers NEWLINE .)
+    NUMBER          reduce using rule 14 (data_line -> numbers NEWLINE .)
+    $end            reduce using rule 14 (data_line -> numbers NEWLINE .)
+
+
+state 20
+
+    (17) numbers -> numbers NUMBER .
+
+    NEWLINE         reduce using rule 17 (numbers -> numbers NUMBER .)
+    COMMENT         reduce using rule 17 (numbers -> numbers NUMBER .)
+    NUMBER          reduce using rule 17 (numbers -> numbers NUMBER .)
+    $end            reduce using rule 17 (numbers -> numbers NUMBER .)
+
+
+state 21
+
+    (12) data_lines -> data_lines data_line .
+
+    COMMENT         reduce using rule 12 (data_lines -> data_lines data_line .)
+    NUMBER          reduce using rule 12 (data_lines -> data_lines data_line .)
+    $end            reduce using rule 12 (data_lines -> data_lines data_line .)
+
+
+state 22
+
+    (4) touchstone1 -> infoline data_lines comments .
+    (8) comments -> comments . comment
+    (9) comment -> . COMMENT
+    (10) comment -> . COMMENT NEWLINE
+
+    $end            reduce using rule 4 (touchstone1 -> infoline data_lines comments .)
+    COMMENT         shift and go to state 2
+
+    comment                        shift and go to state 11
+
+state 23
+
+    (15) data_line -> numbers COMMENT NEWLINE .
+
+    COMMENT         reduce using rule 15 (data_line -> numbers COMMENT NEWLINE .)
+    NUMBER          reduce using rule 15 (data_line -> numbers COMMENT NEWLINE .)
+    $end            reduce using rule 15 (data_line -> numbers COMMENT NEWLINE .)
+
+WARNING: 
+WARNING: Conflicts:
+WARNING: 
+WARNING: shift/reduce conflict for COMMENT in state 15 resolved as shift
+WARNING: shift/reduce conflict for NUMBER in state 15 resolved as shift

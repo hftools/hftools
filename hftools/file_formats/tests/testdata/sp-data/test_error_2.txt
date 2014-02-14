@@ -1,0 +1,2 @@
+
+freq[GHz]	Re(S11)	Im(S11)	Re(S21)	Im(S21)	Re(S12)	Im(S12)	Re(S22)	Im(S22)
