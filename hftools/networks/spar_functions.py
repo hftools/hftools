@@ -16,20 +16,20 @@ def cascadeS(S1, S2, *rest):
     """Cascade arrays containing S-parameters.
     """
     S1, S2 = make_same_info(S1, S2)
-    neworder = tuple([x for x in S1.info if not isinstance(x, _DimMatrix)])
+    neworder = tuple([x for x in S1.dims if not isinstance(x, _DimMatrix)])
     S1 = S1.reorder_dimensions(*neworder)
     S2 = S2.reorder_dimensions(*neworder)
     denom = (1 - S1[..., 1, 1] * S2[..., 0, 0])
     s1det = det(S1)
     s2det = det(S2)
     maxshape = tuple(max(x) for x in zip(S1.shape, S2.shape))
-    res = S1.__class__(np.zeros(maxshape, S1.dtype), dims=S1.info)
+    res = S1.__class__(np.zeros(maxshape, S1.dtype), dims=S1.dims)
     res[..., 0, 0] = S1[..., 0, 0] - S2[..., 0, 0] * s1det
     res[..., 0, 1] = S1[..., 0, 1] * S2[..., 0, 1]
     res[..., 1, 0] = S1[..., 1, 0] * S2[..., 1, 0]
     res[..., 1, 1] = S2[..., 1, 1] - S1[..., 1, 1] * s2det
     res = res / denom
-    res = S1.__class__(res, dims=S1.info)
+    res = S1.__class__(res, dims=S1.dims)
     return res
 
 
@@ -40,16 +40,16 @@ def deembedleft(e, X):
     indices are third and fourth index.
     """
     X, e = make_same_info(X, e)
-    neworder = tuple([x for x in X.info if not isinstance(x, _DimMatrix)])
+    neworder = tuple([x for x in X.dims if not isinstance(x, _DimMatrix)])
     X = X.reorder_dimensions(*neworder)
     e = e.reorder_dimensions(*neworder)
-    klass, info = X.__class__, X.info
+    klass, dims = X.__class__, X.dims
 #    X, e = X.view(type=ndarray), X.view(type=ndarray)
     denom = (e[..., 0, 1] * e[..., 1, 0] -
              e[..., 0, 0] * e[..., 1, 1] +
              e[..., 1, 1] * X[..., 0, 0])
     maxshape = tuple(max(x) for x in zip(X.shape, e.shape))
-    res = X.__class__(np.zeros(maxshape, X.dtype), dims=X.info)
+    res = X.__class__(np.zeros(maxshape, X.dtype), dims=X.dims)
     e11 = (X[..., 0, 0] - e[..., 0, 0])
     e12 = (X[..., 0, 1] * e[..., 1, 0])
     e21 = (X[..., 1, 0] * e[..., 0, 1])
@@ -60,7 +60,7 @@ def deembedleft(e, X):
     res[..., 1, 1] = e22
     res = res / denom
     res[..., 1, 1] = res[..., 1, 1] + X[..., 1, 1]
-    res = klass(res, dims=info)
+    res = klass(res, dims=dims)
     return res
 
 
@@ -71,23 +71,23 @@ def deembedright(X, e):
     indices are third and fourth index.
     """
     X, e = make_same_info(X, e)
-    neworder = tuple([x for x in X.info if not isinstance(x, _DimMatrix)])
+    neworder = tuple([x for x in X.dims if not isinstance(x, _DimMatrix)])
     X = X.reorder_dimensions(*neworder)
     e = e.reorder_dimensions(*neworder)
-    klass, info = X.__class__, X.info
+    klass, dims = X.__class__, X.dims
 #    X, e = X.view(type=ndarray), X.view(type=ndarray)
     denom = (e[..., 0, 1] * e[..., 1, 0] -
              e[..., 0, 0] * e[..., 1, 1] +
              e[..., 0, 0] * X[..., 1, 1])
     maxshape = tuple(max(x) for x in zip(X.shape, e.shape))
-    res = X.__class__(np.zeros(maxshape, X.dtype), dims=X.info)
+    res = X.__class__(np.zeros(maxshape, X.dtype), dims=X.dims)
     res[..., 0, 0] = (-X[..., 0, 1] * X[..., 1, 0] * e[..., 0, 0])
     res[..., 0, 1] = (X[..., 0, 1] * e[..., 1, 0])
     res[..., 1, 0] = (X[..., 1, 0] * e[..., 0, 1])
     res[..., 1, 1] = (X[..., 1, 1] - e[..., 1, 1])
     res = res / denom
     res[..., 0, 0] = res[..., 0, 0] + X[..., 0, 0]
-    res = klass(res, dims=info)
+    res = klass(res, dims=dims)
     return res
 
 
@@ -126,7 +126,7 @@ def make_passive_svd(S, delta=1e-6):
         s = np.diag(s)
         delta = matrix_multiply(matrix_multiply(u, s), v)
         out.append(ss - delta)
-    return S.__class__(out, dims=S.info)
+    return S.__class__(out, dims=S.dims)
 
 
 def make_passive_eig(S, delta=1e-6):
@@ -143,7 +143,7 @@ def make_passive_eig(S, delta=1e-6):
             out.append(s / lambda_max * (1 - delta))
         else:
             out.append(s)
-    return S.__class__(out, dims=S.info)
+    return S.__class__(out, dims=S.dims)
 
 
 def make_reciprocal(S):
@@ -162,5 +162,5 @@ def check_passive(S):
     for s in S:
         lambda_max = max(abs(eig(s)))
         out.append(lambda_max)
-    return hfarray(out, dims=S.info[:1])
+    return hfarray(out, dims=S.dims[:1])
 

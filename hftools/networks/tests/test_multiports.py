@@ -28,16 +28,16 @@ network_classes = [v for k, v in mp.__dict__.items()
 
 class _Test_hfarray(TestCase):
     def setUp(self):
-        ainfo = (aobj.DimSweep("f", 1),
+        adims = (aobj.DimSweep("f", 1),
                  aobj.DimMatrix_i("i", 2),
                  aobj.DimMatrix_j("j", 2))
-        self.a = aobj.hfarray([[[1, 2 + 0j], [3, 4]]], dims=ainfo)
-        binfo = (aobj.DimSweep("f", 1),
+        self.a = aobj.hfarray([[[1, 2 + 0j], [3, 4]]], dims=adims)
+        bdims = (aobj.DimSweep("f", 1),
                  aobj.DimMatrix_i("i", 3),
                  aobj.DimMatrix_j("j", 3))
         self.b = aobj.hfarray([[[1, 2 + 0j, 3],
                                    [4, 5, 6],
-                                   [7, 8, 9]]], dims=binfo)
+                                   [7, 8, 9]]], dims=bdims)
 
 
 class Test_TwoPortArray(_Test_hfarray):
@@ -125,9 +125,9 @@ class Test_TwoPortArray(_Test_hfarray):
 
     def test_1(self):
         res = self.cls(np.array(self.a))
-        resinfo = (aobj.DimSweep("freq", 1), ) + self.a.info[1:]
+        resdims = (aobj.DimSweep("freq", 1), ) + self.a.dims[1:]
         self.assertAllclose(res, self.a)
-        self.assertEqual(res.info, resinfo)
+        self.assertEqual(res.dims, resdims)
 
     def test_2(self):
         self.assertRaises(aobj.DimensionMismatchError,

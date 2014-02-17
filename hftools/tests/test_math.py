@@ -6,14 +6,11 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 import os
-import pdb
-import unittest2 as unittest
 
 import numpy as np
 
 import hftools.math as hfmath
-from hftools.dataset import hfarray, DimSweep, DimRep, DimMatrix_i,\
-    DimMatrix_j
+from hftools.dataset import hfarray, DimSweep, DimMatrix_i, DimMatrix_j
 from hftools.testing import TestCase, make_load_tests
 
 basepath = os.path.split(__file__)[0]
@@ -53,7 +50,7 @@ class Test_make_matrix(TestCase):
         fi = DimSweep("freq", [0, 1])
         matrix = hfmath.make_matrix(a, b, c, d)
         self.assertTrue(isinstance(matrix, hfarray))
-        self.assertEqual(matrix.info, (fi, i, j))
+        self.assertEqual(matrix.dims, (fi, i, j))
         self.assertAllclose(matrix, [[[1, 2], [3, 4]], [[10, 20], [30, 40]]])
 
 
@@ -232,8 +229,8 @@ class Test_smooth_mag_phase(TestCase):
         self.assertAllclose(res, facit)
 
     def test_0(self):
-        resinfo = (DimSweep("freq", range(self.data[0][0].shape[0])),)
-        y = hfarray(self.data[0][0], dims=resinfo)
+        resdims = (DimSweep("freq", range(self.data[0][0].shape[0])),)
+        y = hfarray(self.data[0][0], dims=resdims)
         self._help(y, *self.data[0][1:])
 
 
@@ -297,15 +294,15 @@ class Test_get_shape_helper(TestCase):
         self.assertEqual(hfmath.get_shape_helper((1, 2, 3, 4), 0), tuple())
 
 
-class Test_get_info_helper(TestCase):
-    def test_get_info_helper_1(self):
-        self.assertEqual(hfmath.get_info_helper((1, 2, 3, 4), 1), (1, 2, 3,))
+class Test_get_dims_helper(TestCase):
+    def test_get_dims_helper_1(self):
+        self.assertEqual(hfmath.get_dims_helper((1, 2, 3, 4), 1), (1, 2, 3,))
 
-    def test_get_info_helper_2(self):
-        self.assertEqual(hfmath.get_info_helper((1, 2, 3, 4), 2), (1, 2,))
+    def test_get_dims_helper_2(self):
+        self.assertEqual(hfmath.get_dims_helper((1, 2, 3, 4), 2), (1, 2,))
 
     def test_get_shape_helper_3(self):
-        self.assertEqual(hfmath.get_info_helper((1, 2, 3, 4), 0), tuple())
+        self.assertEqual(hfmath.get_dims_helper((1, 2, 3, 4), 0), tuple())
 
 
 class Test_poly_smooth_mag_phase(TestCase):
@@ -322,8 +319,8 @@ class Test_poly_smooth_mag_phase(TestCase):
         self.assertAllclose(res, facit)
 
     def test_0(self):
-        resinfo = (DimSweep("freq", self.data[0][0]),)
-        y = hfarray(self.data[0][1], dims=resinfo)
+        resdims = (DimSweep("freq", self.data[0][0]),)
+        y = hfarray(self.data[0][1], dims=resdims)
         self._help(self.data[0][0], y, *self.data[0][2:])
 
 
@@ -338,8 +335,8 @@ class TestInv(TestCase):
 
         self.a = i * j * k
         self.b = hfarray(i * j * k, unit="Hz", outputformat="%.3f")
-        cinfo = (DimMatrix_i("i", 2), DimMatrix_j("j", 2))
-        self.c = hfarray([[11, 12], [21, 22]], dims=cinfo)
+        cdims = (DimMatrix_i("i", 2), DimMatrix_j("j", 2))
+        self.c = hfarray([[11, 12], [21, 22]], dims=cdims)
 
         self.m = hfarray([[[1., 2], [3, 4]]] * 3, dims=(J, mi, mj))
         self.m2 = hfarray([[1., 2], [3, 4]], dims=(mi, mj))
@@ -348,7 +345,7 @@ class TestInv(TestCase):
         res = hfmath.inv(self.m)
         self.assertAllclose(res, np.linalg.inv([[1., 2], [3, 4]]))
         self.assertEqual(res.shape, (3, 2, 2))
-        self.assertEqual(res.info, (self.J, self.mi, self.mj))
+        self.assertEqual(res.dims, (self.J, self.mi, self.mj))
 
 
 class TestMatrixMultiply(TestInv):
@@ -356,19 +353,19 @@ class TestMatrixMultiply(TestInv):
         res = hfmath.matrix_multiply(self.m, self.m)
         self.assertAllclose(res, np.dot([[1., 2], [3, 4]], [[1., 2], [3, 4]]))
         self.assertEqual(res.shape, (3, 2, 2))
-        self.assertEqual(res.info, (self.J, self.mi, self.mj))
+        self.assertEqual(res.dims, (self.J, self.mi, self.mj))
 
     def test_2(self):
         res = hfmath.matrix_multiply(self.m, self.m2)
         self.assertAllclose(res, np.dot([[1., 2], [3, 4]], [[1., 2], [3, 4]]))
         self.assertEqual(res.shape, (3, 2, 2))
-        self.assertEqual(res.info, (self.J, self.mi, self.mj))
+        self.assertEqual(res.dims, (self.J, self.mi, self.mj))
 
     def test_3(self):
         res = hfmath.matrix_multiply(self.m2, self.m)
         self.assertAllclose(res, np.dot([[1., 2], [3, 4]], [[1., 2], [3, 4]]))
         self.assertEqual(res.shape, (3, 2, 2))
-        self.assertEqual(res.info, (self.J, self.mi, self.mj))
+        self.assertEqual(res.dims, (self.J, self.mi, self.mj))
 
     def test_nparray(self):
         self.assertRaises(Exception, hfmath.matrix_multiply,
@@ -380,7 +377,7 @@ class TestDet(TestInv):
         res = hfmath.det(self.m)
         self.assertAllclose(res, -2)
         self.assertEqual(res.shape, (3, ))
-        self.assertEqual(res.info, (self.J, ))
+        self.assertEqual(res.dims, (self.J, ))
 
 if __name__ == '__main__':
     I = DimSweep("I", [1, 2])
@@ -392,8 +389,8 @@ if __name__ == '__main__':
 
     a = i * j * k
     b = hfarray(i * j * k, unit="Hz", outputformat="%.3f")
-    cinfo = (DimMatrix_i("i", 2), DimMatrix_j("j", 2))
-    c = hfarray([[11, 12], [21, 22]], dims=cinfo)
+    cdims = (DimMatrix_i("i", 2), DimMatrix_j("j", 2))
+    c = hfarray([[11, 12], [21, 22]], dims=cdims)
 
     m = hfarray([[[1., 2], [3, 4]]] * 3, dims=(J, mi, mj))
     m2 = hfarray([[1., 2], [3, 4]], dims=(mi, mj))

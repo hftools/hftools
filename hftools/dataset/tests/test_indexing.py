@@ -135,7 +135,7 @@ class TestIndex(TestCase):
     def test_slice_1(self):
         a = self.a[:1]
         self.assertAllclose(array(self.a)[:1], a)
-        self.assertEqual(a.info[0], DimSweep("I", [1, 2][:1]))
+        self.assertEqual(a.dims[0], DimSweep("I", [1, 2][:1]))
 
 
 if __name__ == '__main__':

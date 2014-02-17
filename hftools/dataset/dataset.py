@@ -30,7 +30,6 @@ from hftools.dataset.dim import DimBase, DimSweep, DimRep,\
 from hftools.utils import warn, stable_uniq
 from hftools.dataset.helper import guess_unit_from_varname
 from hftools.py3compat import cast_unicode, cast_str
-import hftools.py3compat as py3
 
 class DataBlockError(Exception):
     pass
@@ -44,9 +43,9 @@ def subset_datablock_by_dims(db, dims):
         msg = "dims %r did not specify unique dimensions %r" % (dims, dimset)
         raise ValueError(msg)
     for k, v in db.vardata.items():
-        if set(v.info) == dimset:
+        if set(v.dims) == dimset:
             out[k] = v
-        elif set(v.info) == set(dims[1:]):
+        elif set(v.dims) == set(dims[1:]):
             out[k] = v
     return out
 
@@ -54,7 +53,7 @@ def subset_datablock_by_dims(db, dims):
 def yield_dim_consistent_datablocks(db):
     dimset = set()
     for v in db.vardata.values():
-        dimset.add(v.info)
+        dimset.add(v.dims)
     while dimset:
         longest = sorted(dimset, key=len)[-1]
         yield longest, subset_datablock_by_dims(db, longest)
@@ -72,8 +71,8 @@ def convert_matrices_to_elements(db, formatelement=None):
 
     for k, v in db.vardata.items():
         if ismatrix(v):
-            for i, _ in enumerate(v.info[v.info_index("i")].data, 1):
-                for j, _ in enumerate(v.info[v.info_index("j")].data, 1):
+            for i, _ in enumerate(v.dims[v.info_index("i")].data, 1):
+                for j, _ in enumerate(v.dims[v.info_index("j")].data, 1):
                     out[formatelement(k, i, j)] = v[..., i - 1, j - 1]
         else:
             out[k] = v
@@ -304,8 +303,8 @@ class DataBlock(object):
             if self._xname is None:
                 self._xname = value.name
         else:
-            if self._xname is None and value.info:
-                self._xname = value.info[0].name
+            if self._xname is None and value.dims:
+                self._xname = value.dims[0].name
             else:
                 self._xname = None
             mname, elem = is_matrix_name(key)
@@ -315,7 +314,7 @@ class DataBlock(object):
             else:
                 if (key in self.ivardata):
                     olddim = self.ivardata[key]
-                    if len(value.info) != 1:
+                    if len(value.dims) != 1:
                         msg = "ndim mismatch when trying to set ivardata,"\
                               " can only have one dimension"
                         raise AttributeError(msg)
@@ -323,7 +322,7 @@ class DataBlock(object):
                                                               data=value))
                 else:
                     self.vardata[key] = value
-                for dim in value.info:
+                for dim in value.dims:
                     if dim.name not in self.ivardata:
                         self.ivardata[dim.name] = dim
 
@@ -394,13 +393,13 @@ class DataBlock(object):
         if boolarray.squeeze().ndim > 1:
             raise ValueError("filter can only use array with one dimension")
         if boolarray.dtype != np.dtype(bool):
-            if boolarray.info[0].name not in self.ivardata:
+            if boolarray.dims[0].name not in self.ivardata:
                 out = self.copy()
                 msg = "Filter warning: DataBlock does not contain dimension %r"
-                msg = msg % boolarray.info[0]
+                msg = msg % boolarray.dims[0]
                 warn(msg)
                 return out
-            localdim = self.ivardata[boolarray.info[0].name]
+            localdim = self.ivardata[boolarray.dims[0].name]
             intersection = set(localdim.data).intersection(boolarray)
             barray = boolarray.astype(bool)
             barray[...] = False
@@ -413,17 +412,17 @@ class DataBlock(object):
         out.comments = self.comments
         out.xname = self.xname
 
-        olddim = boolarray.info[0]
+        olddim = boolarray.dims[0]
         newdim = olddim.__class__(olddim, data=olddim.data[boolarray])
 
         for v in self.vardata.keys():
             data = self.vardata[v].view()
             try:
-                i = data.info_index(boolarray.info[0])
+                i = data.info_index(boolarray.dims[0])
             except IndexError:  # This variable does not sweep in boolarray dim
                 out[v] = data
                 continue
-            newinfo = list(data.info)
+            newinfo = list(data.dims)
             reorder = range(data.ndim)
             del newinfo[i]
             del reorder[i]
@@ -433,7 +432,7 @@ class DataBlock(object):
             utdata = hfarray(array(data)[boolarray], newinfo,
                                 unit=data.unit,
                                 outputformat=data.outputformat)
-            dimorder = [x.name for x in self.vardata[v].info]
+            dimorder = [x.name for x in self.vardata[v].dims]
             utdata = utdata.reorder_dimensions(*dimorder)
             out[v] = utdata
         out.xname = self.xname
@@ -446,7 +445,7 @@ class DataBlock(object):
                   " one dimension"
             raise ValueError(msg)
         else:
-            dimname = dim.info[0].name
+            dimname = dim.dims[0].name
 
         if dimname not in self.ivardata:
             msg = "Sort warning: DataBlock does not contain dimension %r"
@@ -605,7 +604,7 @@ class DataBlock(object):
             out.ivardata[dim.name] = dim
 
         for k, v in self.vardata.iteritems():
-            if replacedim not in v.info:
+            if replacedim not in v.dims:
                 if all:
                     out[k] = v
                 1 + 0  # coverage.py bug necessary to get coverage for
@@ -617,7 +616,7 @@ class DataBlock(object):
             i = v.info_index(replacedim)
             new_shape = v.shape[:i] + dims_shape + v.shape[i + 1:]
             v.shape = new_shape
-            v.info = v.info[:i] + dims + v.info[i + 1:]
+            v.dims = v.dims[:i] + dims + v.dims[i + 1:]
             out[k] = v
 
         for k, v in self.ivardata.items():
@@ -658,15 +657,15 @@ if __name__ == '__main__':
     """
 
     def complex_normal(loc=0, scale=1, dims=None):
-        size = [x.data.shape[0] for x in info]
+        size = [x.data.shape[0] for x in dims]
         result = np.empty(size, np.complex128)
         result[:].real = rnd.normal(loc, scale, size)
         result[:].imag = rnd.normal(loc, scale, size)
-        return hfarray(result, dims=info)
+        return hfarray(result, dims=dims)
 
     def normal(loc=0, scale=1, dims=None):
-        size = [x.data.shape[0] for x in info]
-        return hfarray(rnd.normal(loc, scale, size), dims=info)
+        size = [x.data.shape[0] for x in dims]
+        return hfarray(rnd.normal(loc, scale, size), dims=dims)
 
     db = DataBlock()
     db.blockname = "RFmeas.LDMOS69.Spar"
@@ -680,15 +679,15 @@ if __name__ == '__main__':
     db.vd = vd
     db.vg = vg
 
-    db.H = complex_normal(info=sweep_dims + matrix_dims)
-    db.Id = normal(info=sweep_dims)
-    db.Ig = normal(info=sweep_dims)
-    db.S = complex_normal(info=sweep_dims)
-    db.Ig = normal(info=sweep_dims)
-    db.Ig = normal(info=sweep_dims)
-    db.mason = complex_normal(info=sweep_dims)
-    db.vd = normal(info=sweep_dims)
-    db.vg = normal(info=sweep_dims)
+    db.H = complex_normal(dims=sweep_dims + matrix_dims)
+    db.Id = normal(dims=sweep_dims)
+    db.Ig = normal(dims=sweep_dims)
+    db.S = complex_normal(dims=sweep_dims)
+    db.Ig = normal(dims=sweep_dims)
+    db.Ig = normal(dims=sweep_dims)
+    db.mason = complex_normal(dims=sweep_dims)
+    db.vd = normal(dims=sweep_dims)
+    db.vg = normal(dims=sweep_dims)
 
     print db.report()
     from hftools.file_formats.spdata import read_spdata

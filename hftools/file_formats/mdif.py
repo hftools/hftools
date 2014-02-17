@@ -280,11 +280,11 @@ class ReadMDIFFileFormat(ReadFileFormat):
             for i, j in a:
                 vname = "%s[%s,%s]" % (matrix, i, j)
                 arrays.append(np.array(db.vardata[vname])[:, np.newaxis])
-            info = db.vardata["%s[%s,%s]" % (matrix, i, j)].info
+            dims = db.vardata["%s[%s,%s]" % (matrix, i, j)].dims
             X = np.concatenate(arrays, 1)
             I, J = map(set, zip(*a))
             X.shape = X.shape[:1] + (len(I), len(J))
-            db.vardata[matrix] = make_matrix(X, info)
+            db.vardata[matrix] = make_matrix(X, dims)
             idx = min([db.vardata.order.index("%s[%s,%s]" % (matrix, i, j))
                        for i, j in a])
             for i, j in a:
@@ -297,10 +297,10 @@ class ReadMDIFFileFormat(ReadFileFormat):
             a.sort()
             fmt = "%s[%%s]" % (matrix, )
             arrays = [np.array(db.vardata[fmt % i])[:, np.newaxis] for i, in a]
-            info = db.vardata["%s[%s]" % (matrix, i)].info
+            dims = db.vardata["%s[%s]" % (matrix, i)].dims
             X = np.concatenate(arrays, 1)
             X.shape = X.shape[:1] + (len(a),)
-            db.vardata[matrix] = make_vector(X, info)
+            db.vardata[matrix] = make_vector(X, dims)
             idx = min([db.vardata.order.index("%s[%s]" % (matrix, i))
                        for i, in a])
             for i, in a:
@@ -332,13 +332,13 @@ def simple_merge_blocks(blocks):
     #import pdb;pdb.set_trace()
     for k in blocks[0].vardata:
         out[k] = hfarray([b[k] for b in blocks],
-                            dims=(ri,) + blocks[0][k].info)
-        if blocks[0][k].info:
-            out[k] = out[k].reorder_dimensions(blocks[0][k].info[0])
+                         dims=(ri,) + blocks[0][k].dims)
+        if blocks[0][k].dims:
+            out[k] = out[k].reorder_dimensions(blocks[0][k].dims[0])
     for k in blocks[0].ivardata:
         if isinstance(blocks[0].ivardata[k], DimPartial):
             out[k] = hfarray([b.ivardata[k].data[0] for b in blocks],
-                                dims=(ri,))
+                             dims=(ri,))
     c = []
     for b in blocks:
         if b.comments is not None:
@@ -413,16 +413,16 @@ def match_matrix_names(header):
             for (offset, i, vtype) in value:
                 scalar.append((key, offset, vtype))
             del vector[key]
-    return  matrix, vector, scalar
+    return matrix, vector, scalar
 
 
 def is_matrix_name(lista):
     a = [(i, j) for x, i, j, y in lista]
     I, J = map(set, zip(*a))
 
-    if (len(I) * len(J) == len(lista) and
-        I == set(range(1, len(I) + 1)) and
-        J == set(range(1, len(J) + 1))):
+    if ((len(I) * len(J) == len(lista) and
+         I == set(range(1, len(I) + 1)) and
+         J == set(range(1, len(J) + 1)))):
         return True
     else:
         return False
@@ -473,7 +473,7 @@ def fmt_mdif_block(dims, db):
         yield ["BEGIN %s" % blockname]
 
         attribnames, attribdata = zip(*[(k, v) for (k, v) in db.vardata.items()
-                                        if v.info == dims[1:]])
+                                        if v.dims == dims[1:]])
         attribheader = format_complex_header(attribnames, attribdata,
                                              "%s(real)", "%s(complex)",
                                              None, unit_fmt=False)
@@ -482,7 +482,7 @@ def fmt_mdif_block(dims, db):
 
         header, columns = zip(*[(k, v) for (k, v) in db.vardata.items()
 
-                                if v.info == dims])
+                                if v.dims == dims])
         header = (dims[0].name, ) + header
 
         idx = (Ellipsis,) + coord

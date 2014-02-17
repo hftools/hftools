@@ -15,8 +15,6 @@ arrayobj
 
 
 """
-import functools
-
 import numpy as np
 from numpy import ndarray, array, linspace, arange, newaxis,\
     zeros
@@ -25,14 +23,14 @@ import numpy.lib.stride_tricks as np_stride_tricks
 from hftools.dataset.dim import DimSweep, DimRep, DimMatrix_i, DimMatrix_j,\
     _DiagAxis, info_has_complex, CPLX, DimBase, DimAnonymous, DiagAxis
 from hftools.utils import is_numlike, is_integer, warn
-from hftools.core import HFArrayShapeInfoMismatchError, HFArrayError, DimensionMismatchError
+from hftools.core import HFArrayShapeInfoMismatchError, HFArrayError,\
+    DimensionMismatchError
 
 
-
-def get_new_anonymous_dim(info, *k, **kw):
-    if isinstance(info, hfarray):
-        info = info.info
-    anon_names = set(int(x.name[4:]) for x in info
+def get_new_anonymous_dim(dims, *k, **kw):
+    if isinstance(dims, hfarray):
+        dims = dims.dims
+    anon_names = set(int(x.name[4:]) for x in dims
                      if (isinstance(x, DimAnonymous) and
                          x.name.startswith("ANON")))
     anon_names.add(0)
@@ -129,19 +127,19 @@ def diagonal_view(x, diagonal):
     *diagonal*
        >>> fi = DiagAxis("Frekvens[Hz]",linspace(0, 400e6, 3))
        >>> cf = hfarray(zeros((3, 3)), (fi, fi.deriv_axis))
-       >>> diag = diagonal_view(cf, cf.info)
+       >>> diag = diagonal_view(cf, cf.dims)
        >>> diag[...] = arange(0,3)+11
        >>> cf
        hfarray([[ 11.,   0.,   0.],
-              [  0.,  12.,   0.],
-              [  0.,   0.,  13.]])
+                [  0.,  12.,   0.],
+                [  0.,   0.,  13.]])
     """
     diagstride = 0
     diagshapes = []
     newstrides = list(x.strides[:])
     newshapes = list(x.shape[:])
 
-    indices = [x.info.index(ax) for ax in diagonal]
+    indices = [x.dims.index(ax) for ax in diagonal]
     first = indices[0]
 
      #reversed so we can delete idx without messing up
@@ -165,12 +163,12 @@ def _expand_diagonal(x, diagaxis):
     if not isinstance(diagaxis, (_DiagAxis, )):
         raise Exception("diagaxis must be a _DiagAxis")
 
-    if diagaxis not in x.info:
+    if diagaxis not in x.dims:
         raise Exception("%s does not contain a %r axis" % (x, diagaxis))
 
-    idx = x.info.index(diagaxis)
-    diagaxis = x.info[idx]
-    newinfo = list(x.info[:])
+    idx = x.dims.index(diagaxis)
+    diagaxis = x.dims[idx]
+    newinfo = list(x.dims[:])
     newshape = list(x.shape[:])
     newinfo[idx:idx + 1] = [diagaxis.indep_axis, diagaxis.deriv_axis]
     newshape[idx:idx + 1] = [diagaxis.indep_axis.data.shape[0], ] * 2
@@ -185,7 +183,7 @@ def expand_diagonals(x, diags=None):
     """
     out = x
     if diags is None:
-        diags = [ax for ax in x.info if isinstance(ax, _DiagAxis)]
+        diags = [ax for ax in x.dims if isinstance(ax, _DiagAxis)]
 
     for ax in diags:
         out = _expand_diagonal(out, ax)
@@ -193,16 +191,16 @@ def expand_diagonals(x, diags=None):
 
 
 def info_union(*a):
-    newinfo = InfoList(a[0].info)
+    newinfo = InfoList(a[0].dims)
     for B in a[1:]:
-        for dim in B.info:
+        for dim in B.dims:
             if dim not in newinfo:
                 newinfo.append(dim)
     newinfo.sort(key=lambda x: x.sortprio)
     return Info(newinfo)
 
 
-def change_shape(x, newinfo):
+def change_shape(x, newdims):
     u"""Try to change shape of *x* to use newinfo.
        Bygger om en array sa att den matchar alla Axis objekt i *newinfo*
        listan. Nya dimensioner far langden 1 dvs. understatt repetion av
@@ -212,22 +210,22 @@ def change_shape(x, newinfo):
        *make_complex_array*.
 
     """
-    if info_has_complex(newinfo):
+    if info_has_complex(newdims):
         x = make_fullcomplex_array(x)
 
     newself = x.view()
     newselfshape = []
     neworder = []
-    selfinfo = x.info
-    for dim in newinfo:
-        if dim in x.info:
-            newselfshape.append(x.shape[selfinfo.matching_index(dim)])
-            neworder.append(selfinfo.matching_index(dim))
+    selfdims = x.dims
+    for dim in newdims:
+        if dim in x.dims:
+            newselfshape.append(x.shape[selfdims.matching_index(dim)])
+            neworder.append(selfdims.matching_index(dim))
         else:
             newselfshape.append(1)
     newself = newself.transpose(*neworder)
     newself.shape = tuple(newselfshape)
-    newself.info = Info(newinfo)
+    newself.dims = Info(newdims)
     return newself
 
 
@@ -237,13 +235,13 @@ def make_same_info_list(a):
 
 
 def make_same_info(A, B):
-    u"""Anropas med lista med *Arrays*. Returnerar arrayer som har samma *info*
+    u"""Anropas med lista med *Arrays*. Returnerar arrayer som har samma *dims*
     dvs vi har anropat change_shape med en *newinfo* som innehaller unionen
-    av de Axis objekt som finns i *info* av *Arrayerna*.
+    av de Axis objekt som finns i *dims* av *Arrayerna*.
 
     """
     if not isinstance(B, _hfarray):
-        B = A.__class__(B.view(), A.info, copy=False)
+        B = A.__class__(B.view(), dims=A.dims, copy=False)
     return make_same_info_list((A, B))
 
 
@@ -260,38 +258,38 @@ def remove_tail(x):
     outa = a.reshape(newshape)
     if isinstance(x, hfarray):
         dim = DimRep("Tail", np.arange(outa.shape[1]))
-        info = (x.info[0], dim)
+        dims = (x.dims[0], dim)
         if ismatrix(x):
-            info = info + x.info[-2:]
-        outa = hfarray(outa, dims=info, unit=x.unit)
+            dims = dims + x.dims[-2:]
+        outa = hfarray(outa, dims=dims, unit=x.unit)
     return outa
 
 
 def remove_rep(data, newdimname="AllReps"):
     u"""Collapse all DimRep dimensions to single dimension
     """
-    order = [(i, dim) for i, dim in enumerate(data.info)
+    order = [(i, dim) for i, dim in enumerate(data.dims)
              if isinstance(dim, DimRep)]
 #    pdb.set_trace()
 
     if order:
         dims = zip(*order)[1]
 
-        newdata = data.reorder_dimensions(*(data.info[:order[0][0]] + dims))
+        newdata = data.reorder_dimensions(*(data.dims[:order[0][0]] + dims))
         newdata = hfarray(np.ascontiguousarray(data, dtype=data.dtype),
-                             dims=newdata.info, dtype=newdata.dtype,
-                             unit=newdata.unit)
+                          dims=newdata.dims, dtype=newdata.dtype,
+                          unit=newdata.unit)
         shapes = [data.shape[i] for i, _ in order]
         repsize = int(np.multiply.reduce(shapes))
         a = np.array(data)
         a.shape = (data.shape[:order[0][0]] + (repsize,) +
                    data.shape[order[-1][0] + 1:])
-        info = (data.info[:order[0][0]] + (DimRep(newdimname, repsize),) +
-                data.info[order[-1][0] + 1:])
+        dims = (data.dims[:order[0][0]] + (DimRep(newdimname, repsize),) +
+                data.dims[order[-1][0] + 1:])
     else:
-        info = data.info
+        dims = data.dims
         a = data
-    return data.__class__(a, dims=info, copy=False)
+    return data.__class__(a, dims=dims, copy=False)
 
 
 def make_fullcomplex_array(a):
@@ -301,9 +299,9 @@ def make_fullcomplex_array(a):
     else:
         out = np.zeros(a.shape + (2, 2), dtype=np.float64)
         try:
-            info = a.info + CPLX
+            dims = a.dims + CPLX
         except AttributeError:
-            info = CPLX
+            dims = CPLX
             cls = hfarray
         A = a.view(type=np.ndarray, dtype=a.dtype)
         if np.iscomplexobj(a):
@@ -312,13 +310,13 @@ def make_fullcomplex_array(a):
             out[..., 1, 0] = A.imag
         else:
             out[..., 0, 0] = A.real
-        out = cls(out, dims=info, copy=False)
+        out = cls(out, dims=dims, copy=False)
     return out
 
 
 def isfullcomplex(x):
     try:
-        return info_has_complex(x.info)
+        return info_has_complex(x.dims)
     except AttributeError:
         return False
 
@@ -327,7 +325,7 @@ def ismatrix(a):
     i = False
     j = False
     if isinstance(a, _hfarray):
-        for dim in a.info:
+        for dim in a.dims:
             if isinstance(dim, DimMatrix_i):
                 i = True
             elif isinstance(dim, DimMatrix_j):
@@ -351,9 +349,9 @@ def check_instance(func):
     return a
 
 
-def replace_dim(info, olddim, newdim):
+def replace_dim(dims, olddim, newdim):
     out = []
-    for d in info:
+    for d in dims:
         if olddim.name == d.name:
             out.append(newdim)
         else:
@@ -371,9 +369,9 @@ class _hfarray(ndarray):
 
         if info is not None:
             warn("hfarray, use dims not info")
-        if dims is not None:
-            info = dims
-
+            if dims is not None:
+                raise Exception("Can not specify both info and dims")
+            dims = info
 
         # Make sure we are working with an array, and copy the data
         # if requested
@@ -384,23 +382,23 @@ class _hfarray(ndarray):
         # Transform 'subarr' from an ndarray to our new subclass.
         subarr = subarr.view(subtype)
 
-        # Use the specified 'info' parameter if given
-        if info is None:
-            if hasattr(data, 'info'):
-                info = tuple(data.info)
+        # Use the specified 'dims' parameter if given
+        if dims is None:
+            if hasattr(data, 'dims'):
+                dims = tuple(data.dims)
             elif subarr.ndim == 0:
-                info = tuple()
+                dims = tuple()
             elif len(subarr.shape) <= len(subtype.default_dim):
-                info = tuple(x.__class__(x.name, range(size))
+                dims = tuple(x.__class__(x.name, range(size))
                              for (x, size) in zip(subtype.default_dim,
                                                   subarr.shape))
             else:
-                msg = ("On creation of %s *info* "
+                msg = ("On creation of %s *dims* "
                        "must be specified" % subtype.__name__)
                 raise DimensionMismatchError(msg)
 
-        subarr.info = Info(info)
-        #Check to see that info matches shape
+        subarr._dims = Info(dims)
+        #Check to see that dims matches shape
         subarr.verify_dimension()
         if outputformat is not None:
             subarr.outputformat = outputformat
@@ -422,11 +420,21 @@ class _hfarray(ndarray):
 
     @property
     def dims(self):
-        return self.info
+        return self._dims
 
     @dims.setter
     def dims(self, value):
-        self.info = value
+        self._dims = value
+
+    @property
+    def info(self):
+        warn("hfarray, use dims not info")
+        return self._dims
+
+    @info.setter
+    def info(self, value):
+        warn("hfarray, use dims not info")
+        self._dims = value
 
     def __repr__(self):
         r = ndarray.__repr__(self)
@@ -436,25 +444,23 @@ class _hfarray(ndarray):
         for rad in rlist[1:]:
             out.append(prefix + rad)
         return "\n".join(out)
-        
-        
 
     def __array_finalize__(self, obj):
-        self.__dict__["info"] = Info(getattr(obj, "info", Info()))
+        self.__dict__["_dims"] = Info(getattr(obj, "_dims", Info()))
         self.__dict__["outputformat"] = getattr(obj, "outputformat", "%.16e")
         self.__dict__["unit"] = getattr(obj, "unit", None)
 
     def verify_dimension(self):
         u"""Internal function that checks to see if the arrays dimensions match
-           those of the *info* specification.
+           those of the *dims* specification.
         """
-        if len(self.info) != self.ndim:
+        if len(self.dims) != self.ndim:
             raise HFArrayShapeInfoMismatchError
 
     def info_index(self, name, cls=None):
         u"""Leta upp index for axisobjekt med *name*
         """
-        for idx, ax in enumerate(self.info):
+        for idx, ax in enumerate(self.dims):
             if ax.name == name:
                 if cls is None:
                     return idx
@@ -466,11 +472,11 @@ class _hfarray(ndarray):
     def replace_dim(self, olddim, newdim):
         if isinstance(olddim, (str, unicode)):
             olddim = self.info_index(olddim)
-            olddim = self.info[olddim]
+            olddim = self.dims[olddim]
             if np.issubclass_(newdim, DimBase):
                 newdim = newdim(olddim)
-        self.info = replace_dim(self.info, olddim, newdim)
-        return self.info
+        self.dims = replace_dim(self.dims, olddim, newdim)
+        return self.dims
 
     def view(self, dtype=None, type=None):
         u"""Return view of *data* i.e. new *hfarray* object but pointing to
@@ -478,34 +484,34 @@ class _hfarray(ndarray):
         """
         if type is None:
             return self.__class__(ndarray.view(self, dtype=self.dtype),
-                                  self.info, copy=False)
+                                  dims=self.dims, copy=False)
         else:
             return ndarray.view(self, dtype=self.dtype, type=type)
 
     def reorder_dimensions(self, *order):
-        u"""Omorganiserar ordningen pa Axis i *info*. Genom att flytta Axis
+        u"""Omorganiserar ordningen pa Axis i *dims*. Genom att flytta Axis
            objekten som raknas upp i *order* till borjan.
 
         """
-        infos = list(self.info[:])
+        infos = list(self.dims[:])
         neworder = []
         for dim in order:
-            neworder.append(self.info.index(dim))
+            neworder.append(self.dims.index(dim))
             del infos[infos.index(dim)]
         for dim in infos:
-            neworder.append(self.info.index(dim))
+            neworder.append(self.dims.index(dim))
         return self.transpose(*neworder)
 
     def transpose(self, *order):
         u"""Returnerar hfarray med dimensionerna omorganiserade i ordning
-        som ges av *order*. *order* anger index i *info* listan.
+        som ges av *order*. *order* anger index i *dims* listan.
 
            .. todo:: Ta aven emot en lista med Axis objekt.
         """
         if not order:
             order = range(self.ndim)[::-1]
         return self.__class__(ndarray.transpose(self, *order),
-                              dims=[self.info[i] for i in order], copy=False)
+                              dims=[self.dims[i] for i in order], copy=False)
 
     @property
     def T(self):
@@ -518,12 +524,13 @@ class _hfarray(ndarray):
         dims, dimidxs = multiple_axis_handler(self, axis)
 
         if dims is None:
-            newinfo = [ax for idx, ax in enumerate(self.info)
+            newinfo = [ax for idx, ax in enumerate(self.dims)
                        if self.shape[idx] != 1]
         else:
-            newinfo = [ax for idx, ax in enumerate(self.info)
+            newinfo = [ax for idx, ax in enumerate(self.dims)
                        if idx not in dimidxs]
-        return self.__class__(ndarray.squeeze(self, axis=dimidxs), dims=newinfo, copy=False)
+        return self.__class__(ndarray.squeeze(self, axis=dimidxs),
+                              dims=newinfo, copy=False)
 
     def apply_outputformat(fun):
         def __getitem__(self, *x, **kw):
@@ -566,46 +573,50 @@ class _hfarray(ndarray):
         elif ellips_count > 1:
             raise IndexError("Can not handle more than one Ellipsis")
 
-        info = self.info
+        dims = self.dims
         testbool = (len(indices) == 1 and
                     isinstance(indices[0], hfarray) and
                     indices[0].dtype == bool)
         if testbool:
             reorder = []
-            for dim in self.info:
-                if dim not in indices[0].info:
+            for dim in self.dims:
+                if dim not in indices[0].dims:
                     reorder.append(dim)
                 else:
                     break
-            reorder2 = reorder + list(indices[0].info)
+            reorder2 = reorder + list(indices[0].dims)
             reordered = self.reorder_dimensions(*reorder2)
-            if len(indices[0].info) == 1:
-                dim = indices[0].info[0]
-                newdim = dim.__class__(dim.name, np.array(dim.data)[indices[0]], unit=dim.unit)
+            if len(indices[0].dims) == 1:
+                dim = indices[0].dims[0]
+                newdim = dim.__class__(dim.name,
+                                       np.array(dim.data)[indices[0]],
+                                       unit=dim.unit)
             else:
                 newdim = get_new_anonymous_dim(self, int(np.sum(indices[0])))
 
-            info = reordered.info[:len(reorder)] + (newdim,) + reordered.info[len(reorder) + len(indices[0].info):]
-            idx = (slice(None),)*len(reorder) + (indices[0],)
-            return hfarray(ndarray.__getitem__(reordered, idx), dims=info)
+            dims = (reordered.dims[:len(reorder)] +
+                    (newdim,) +
+                    reordered.dims[len(reorder) + len(indices[0].dims):])
+            idx = (slice(None), ) * len(reorder) + (indices[0],)
+            return hfarray(ndarray.__getitem__(reordered, idx), dims=dims)
 
         try:
             indices = indices + (slice(None),) * (self.ndim - len(indices))
-            info = []
-            dim_in_indices = dict((x.info[0].name, x.info[0]) for x in indices
+            dims = []
+            dim_in_indices = dict((x.dims[0].name, x.dims[0]) for x in indices
                                   if isinstance(x, hfarray))
-            for idx, dim in zip(indices, self.info):
+            for idx, dim in zip(indices, self.dims):
                 if isinstance(idx, int):
                     continue
                 elif isinstance(idx, slice):
-                    info.append(dim[idx])
+                    dims.append(dim[idx])
                 else:
-                    info.append(dim_in_indices.get(dim.name, dim))
+                    dims.append(dim_in_indices.get(dim.name, dim))
             if ellipsis_and_ints:
                 indices = orig_indices
             out = ndarray.__getitem__(self, indices)
             if isinstance(out, ndarray):
-                return self.__class__(out, dims=info, copy=False)
+                return self.__class__(out, dims=dims, copy=False)
             else:
                 return out
         except HFArrayShapeInfoMismatchError:
@@ -696,13 +707,13 @@ class _hfarray(ndarray):
 
     def rss(self, axis=None):
         u"""Berakna kvadratsumma over *axis*. Dar *axis* specas av index till
-           *info*.
+           *dims*.
 
            .. todo:: Ta aven emot en lista med Axis objekt.
         """
         return (abs(self) ** 2).sum(axis) ** 0.5
 
-    def sum(self, axis=None, dtype=None, out=None, keepdims=False, 
+    def sum(self, axis=None, dtype=None, out=None, keepdims=False,
             dimerror=True):
         try:
             dims, dimidx = multiple_axis_handler(self, axis)
@@ -712,12 +723,12 @@ class _hfarray(ndarray):
             else:
                 return self
         r = np.asarray(self).sum(dimidx, dtype=dtype, out=out, keepdims=True)
-        res = hfarray(r, dims=self.info)
+        res = hfarray(r, dims=self.dims)
         if not keepdims:
             res = res.squeeze(axis=dimidx)
         return res
 
-    def mean(self, axis=None, dtype=None, out=None, keepdims=False, 
+    def mean(self, axis=None, dtype=None, out=None, keepdims=False,
              dimerror=True):
         try:
             dims, dimidx = multiple_axis_handler(self, axis)
@@ -727,15 +738,15 @@ class _hfarray(ndarray):
             else:
                 return self
         r = np.asarray(self).mean(dimidx, dtype=dtype, out=out, keepdims=True)
-        res = hfarray(r, dims=self.info)
+        res = hfarray(r, dims=self.dims)
         if not keepdims:
             res = res.squeeze(axis=dimidx)
         return res
 
-    def std(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False, 
+    def std(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False,
             dimerror=True):
         u"""Berakna standardavvikelse over *axis*. Dar *axis* specas av index
-           till *info*.
+           till *dims*.
 
            .. todo:: Ta aven emot en lista med Axis objekt.
         """
@@ -747,7 +758,7 @@ class _hfarray(ndarray):
             else:
                 return self
         r = np.asarray(self).std(dimidx, dtype=dtype, out=out, keepdims=True)
-        res = hfarray(r, dims=self.info)
+        res = hfarray(r, dims=self.dims)
         if not keepdims:
             res = res.squeeze(axis=dimidx)
         return res
@@ -755,7 +766,7 @@ class _hfarray(ndarray):
     def var(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False,
             dimerror=True):
         u"""Berakna standardavvikelse over *axis*. Dar *axis* specas av index
-           till *info*.
+           till *dims*.
 
            .. todo:: Ta aven emot en lista med Axis objekt.
         """
@@ -767,14 +778,14 @@ class _hfarray(ndarray):
             else:
                 return self
         r = np.asarray(self).var(dimidx, dtype=dtype, out=out, keepdims=True)
-        res = hfarray(r, dims=self.info)
+        res = hfarray(r, dims=self.dims)
         if not keepdims:
             res = res.squeeze(axis=dimidx)
         return res
 
     def min(self, axis=None, out=None, keepdims=False, dimerror=True):
         u"""Berakna minsta varde over *axis*. Dar *axis* specas av index
-           till *info*.
+           till *dims*.
 
            .. todo:: Ta aven emot en lista med Axis objekt.
         """
@@ -786,14 +797,14 @@ class _hfarray(ndarray):
             else:
                 return self
         r = np.asarray(self).min(dimidx, out=out, keepdims=True)
-        res = hfarray(r, dims=self.info)
+        res = hfarray(r, dims=self.dims)
         if not keepdims:
             res = res.squeeze(axis=dimidx)
         return res
 
     def max(self, axis=None, out=None, keepdims=False, dimerror=True):
         u"""Berakna storsta varde over *axis*. Dar *axis* specas av index
-           till *info*.
+           till *dims*.
 
            .. todo:: Ta aven emot en lista med Axis objekt.
         """
@@ -805,7 +816,7 @@ class _hfarray(ndarray):
             else:
                 return self
         r = np.asarray(self).max(dimidx, out=out, keepdims=True)
-        res = hfarray(r, dims=self.info)
+        res = hfarray(r, dims=self.dims)
         if not keepdims:
             res = res.squeeze(axis=dimidx)
         return res
@@ -816,7 +827,7 @@ class _hfarray(ndarray):
         axis = axis_handler(self, axis)
         result = np.asarray(self).cumprod(axis=self.info_index(axis),
                                           dtype=dtype, out=out)
-        return self.__class__(result, dims=self.info, copy=False)
+        return self.__class__(result, dims=self.dims, copy=False)
 
     def cumsum(self, axis=0, dtype=None, out=None):
         if axis is None:
@@ -824,20 +835,20 @@ class _hfarray(ndarray):
         axis = axis_handler(self, axis)
         result = np.asarray(self).cumsum(axis=self.info_index(axis),
                                          dtype=dtype, out=out)
-        return self.__class__(result, dims=self.info, copy=False)
+        return self.__class__(result, dims=self.dims, copy=False)
 
     def help(self):
         out = "\n".join(["class: %(_class)s",
                          "dtype: %(dtype)s",
                          "shape: %(shape)r",
                          "dims:  (%(dims)s)"])
-        info = ["%r" % self.info[0]]
-        for i in self.info[1:]:
-            info.append("        %r" % i)
+        dims = ["%r" % self.dims[0]]
+        for i in self.dims[1:]:
+            dims.append("        %r" % i)
         out = out % dict(_class=self.__class__.__name__,
                          dtype=self.dtype,
                          shape=self.shape,
-                         dims=",\n".join(info),
+                         dims=",\n".join(dims),
                          )
         return out
 
@@ -846,27 +857,27 @@ def axis_handler(a, axis):
     if axis is None:
         return None
     elif isinstance(axis, int):
-        return a.info[axis]
+        return a.dims[axis]
     elif isinstance(axis, type) and issubclass(axis, DimBase):
         outaxis = []
-        for dim in a.info:
+        for dim in a.dims:
             if isinstance(dim, axis):
                 outaxis.append(dim)
         if len(outaxis) == 0:
-            msg = "%r dimension not present in info %r"
-            msg = msg % (axis.__name__, a.info)
+            msg = "%r dimension not present in dims %r"
+            msg = msg % (axis.__name__, a.dims)
             raise IndexError(msg)
         elif len(outaxis) == 1:
             return outaxis[0]
         else:
             msg = "There are several %r present in %r"
-            msg = msg % (axis, a.info)
+            msg = msg % (axis, a.dims)
             raise IndexError(msg)
-    elif axis in a.info:
+    elif axis in a.dims:
         return axis
     else:
         msg = "%r not a valid dimension for %r"
-        raise IndexError(msg % (axis, a.info))
+        raise IndexError(msg % (axis, a.dims))
 
 
 def multiple_axis_handler(a, axis):
@@ -878,19 +889,19 @@ def multiple_axis_handler(a, axis):
     outidx = []
     for ax in axis:
         if isinstance(ax, int):
-            outaxis.append(a.info[ax])
+            outaxis.append(a.dims[ax])
             outidx.append(ax)
         elif isinstance(ax, type) and issubclass(ax, DimBase):
-            for dimidx, dim in enumerate(a.info):
+            for dimidx, dim in enumerate(a.dims):
                 if isinstance(dim, ax):
                     outaxis.append(dim)
                     outidx.append(dimidx)
-        elif isinstance(ax, DimBase) and ax in a.info:
+        elif isinstance(ax, DimBase) and ax in a.dims:
             outaxis.append(ax)
-            outidx.append(a.info.index(ax))
+            outidx.append(a.dims.index(ax))
         else:
-            msg = "%r dimension not present in info %r"
-            msg = msg % (ax, a.info)
+            msg = "%r dimension not present in dims %r"
+            msg = msg % (ax, a.dims)
             raise IndexError(msg)
     return tuple(outaxis), tuple(outidx)
 
@@ -905,16 +916,15 @@ class hfarray(_hfarray):
             if outputformat is None and len(dims) == 1:
                 outputformat = dims[0].outputformat
         return _hfarray.__new__(subtype, data, dims=dims, dtype=dtype,
-                                   copy=copy, order=order, subok=subok,
-                                   ndmin=ndmin, unit=unit,
-                                   outputformat=outputformat, info=info)
+                                copy=copy, order=order, subok=subok,
+                                ndmin=ndmin, unit=unit,
+                                outputformat=outputformat, info=info)
 
 
 class ValueArray(hfarray):
     """This class is included, for compatibility reasons.
     Do not use in new code."""
-    pass  
-
+    pass
 
 
 def make_matrix(data, dims, iname="i", jname="j"):

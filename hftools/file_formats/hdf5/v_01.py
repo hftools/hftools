@@ -41,7 +41,7 @@ def save_hdf5(db, h5file, name="datablock", mode="w", compression="gzip", **kw):
         com = np.array(db.comments.fullcomments)
         comments.create_dataset("fullcomments", data=com, compression=compression)
 #        pdb.set_trace()
-    
+
     for k in db.vardata:
         datadtype = ""
         data = db[k]
@@ -50,7 +50,7 @@ def save_hdf5(db, h5file, name="datablock", mode="w", compression="gzip", **kw):
                 datadtype = data.dtype.name
                 data = data.astype(np.uint64)
             dset = vardata.create_dataset(k, data=data, compression=compression, )
-            klass, name, unit = zip(*[unpack_dim(dim) for dim in db[k].info])
+            klass, name, unit = zip(*[unpack_dim(dim) for dim in db[k].dims])
         else:
             if data.dtype.name.startswith("datetime64"):
                 datadtype = data.dtype.name
@@ -74,9 +74,9 @@ def save_hdf5(db, h5file, name="datablock", mode="w", compression="gzip", **kw):
         dset.attrs[r"info\dtype"] = datadtype
     if isinstance(h5file, (str, unicode)):
         fil.close()
-        
 
-dims = dict((name, dim) for name, dim in hftools.dataset.__dict__.iteritems() if isinstance(dim, type) and issubclass(dim, DimBase))
+
+dims_dict = dict((name, dim) for name, dim in hftools.dataset.__dict__.iteritems() if isinstance(dim, type) and issubclass(dim, DimBase))
 #print dims
 
 def read_hdf5(h5file, name="datablock", **kw):
@@ -91,7 +91,7 @@ def read_hdf5(h5file, name="datablock", **kw):
         blockname = None
     db.blockname = blockname
     comments = grp["Comments"]
-    
+
     if "fullcomments" in comments and len(comments["fullcomments"]):
         db.comments = Comments([x.strip() for x in np.array(comments["fullcomments"])])
     else:
@@ -101,7 +101,7 @@ def read_hdf5(h5file, name="datablock", **kw):
     for k in ivardata:
         v = ivardata[k]
         datadtype = v.attrs[r"info\dtype"] or None
-        dimcls = dims.get(v.attrs[r"info\class"], DimRep)
+        dimcls = dims_dict.get(v.attrs[r"info\class"], DimRep)
         unit = v.attrs.get(r"info\unit", "none")
         if unit.lower() == "none":
             unit = None
@@ -111,11 +111,11 @@ def read_hdf5(h5file, name="datablock", **kw):
     for k in vardata:
         v = vardata[k]
         datadtype = v.attrs[r"data\dtype"] or None
-        info = tuple(db.ivardata[dimname] for dimname in v.attrs[r"info\name"])
+        dims = tuple(db.ivardata[dimname] for dimname in v.attrs[r"info\name"])
         unit = v.attrs.get(r"data\unit", "none")
         if unit.lower() == "none":
             unit = None
-        db[k] = hfarray(np.array(v), dtype=datadtype, dims=info, unit=unit)
+        db[k] = hfarray(np.array(v), dtype=datadtype, dims=dims, unit=unit)
     if isinstance(h5file, (str, unicode)):
         fil.close()
 

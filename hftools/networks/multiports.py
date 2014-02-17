@@ -31,23 +31,16 @@ Twoports
 .. autoclass:: TpArray
 
 """
-import itertools
-import os
-import pdb
-import re
-import sys
+import warnings
 
-from itertools import chain
-
-import numpy
 import numpy as np
-from numpy import concatenate, zeros, newaxis, array, ndarray, identity, \
-    zeros_like, zeros, bmat, diag, sqrt, empty_like, asarray
+from numpy import array, identity, \
+    zeros_like, bmat, diag, sqrt
 
-from hftools.math import det, matrix_multiply, inv
+from hftools.math import matrix_multiply, inv
 from hftools.networks.spar_functions import cascadeS, deembed, deembedright,\
     deembedleft
-from hftools.dataset.arrayobj import hfarray, DimSweep, DimRep,\
+from hftools.dataset.arrayobj import hfarray, DimSweep,\
     DimMatrix_i, DimMatrix_j, _hfarray, ismatrix
 
 
@@ -122,10 +115,11 @@ class _MultiPortArray(_hfarray):
                 subok=False, ndmin=0, unit=None, info=None):
 
         if info is not None:
-            warn("_MultiPortArray, use dims not info")
-            if dims is None:
-                dims = info
-        info = None
+            warnings.warn("_MultiPortArray, use dims not info")
+            if dims is not None:
+                raise Exception("Can not specify both dims and info")
+            dims = info
+            info = None
         data = np.asanyarray(data)
         if dims is None:
             if hasattr(data, 'dims'):
@@ -138,13 +132,13 @@ class _MultiPortArray(_hfarray):
                 dims = dims + (DimMatrix_i("i", data.shape[-2]),
                                DimMatrix_j("j", data.shape[-1]))
         return _hfarray.__new__(subtype, data, dims=dims, dtype=dtype,
-                                   copy=copy, order=order, subok=subok,
-                                   ndmin=ndmin, unit=unit)
+                                copy=copy, order=order, subok=subok,
+                                ndmin=ndmin, unit=unit)
 
     def ismatrix(self):
         return (self.ndim >= 2 and
-                isinstance(self.info[-2], DimMatrix_i) and
-                isinstance(self.info[-1], DimMatrix_j))
+                isinstance(self.dims[-2], DimMatrix_i) and
+                isinstance(self.dims[-1], DimMatrix_j))
 
     def cascade(self, other):
         """Make a cascade connection of *self* and *other*.
@@ -209,9 +203,9 @@ class _TwoPortArray(_MultiPortArray):
 
 def make_matrix(A):
     a = np.asanyarray(A)
-    info = (DimMatrix_i("i", range(a.shape[-2])),
+    dims = (DimMatrix_i("i", range(a.shape[-2])),
             DimMatrix_j("j", range(a.shape[-1])),)
-    return hfarray(a, dims=info)
+    return hfarray(a, dims=dims)
 
 
 class ZArray(_MultiPortArray):

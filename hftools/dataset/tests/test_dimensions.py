@@ -61,7 +61,7 @@ class Test_Dim_init(TestCase):
     def test_hfarray(self):
         a = hfarray(self.dim)
         self.assertAllclose(a, range(10))
-        self.assertEqual(a.info, (DimSweep("a", 10, unit="Hz"),))
+        self.assertEqual(a.dims, (DimSweep("a", 10, unit="Hz"),))
 
 
 class Test_Dim(TestCase):
@@ -213,11 +213,11 @@ class TestDiag_Matrix_j(Test_Dim):
 
 
 class Test_info_has_complex(TestCase):
-    def _helper(self, info):
-        self.assertTrue(info_has_complex(info))
+    def _helper(self, dims):
+        self.assertTrue(info_has_complex(dims))
 
-    def _helper_false(self, info):
-        self.assertFalse(info_has_complex(info))
+    def _helper_false(self, dims):
+        self.assertFalse(info_has_complex(dims))
 
     def test_1(self):
         self._helper_false((DimSweep("d", 3),))

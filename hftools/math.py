@@ -310,7 +310,7 @@ def get_shape_helper(x, N):
         return x[-N:]
 
 
-def get_info_helper(x, N):
+def get_dims_helper(x, N):
     if N == 0:
         return tuple()
     else:
@@ -336,15 +336,15 @@ class broadcast_matrices(object):
                                                 for x, Nelem in zip(arrays, Nlist)]
         self._matrixshapes = _matrixshapes
         self._matrixstrides = _matrixstrides
-        infos = [x.info for x, Nelem in zip(arrays, Nlist)]
+        dimslist = [x.dims for x, Nelem in zip(arrays, Nlist)]
 
         firstelems = broadcast_arrays(*[firstpos(x, Nelem)
                                         for x, Nelem in zip(arrays, Nlist)])
         self._broadcasted = broadcasted = []
-        for o, endshapes, endstrides, info in zip(firstelems, _matrixshapes,
-                                                  _matrixstrides, infos):
+        for o, endshapes, endstrides, dims in zip(firstelems, _matrixshapes,
+                                                  _matrixstrides, dimslist):
             x = as_strided(o, o.shape + endshapes, o.strides + endstrides)
-            broadcasted.append(hfarray(x, dims=info, copy=False))
+            broadcasted.append(hfarray(x, dims=dims, copy=False))
 
         self.outershape = broadcasted[0].shape[:-Nlist[0]]
 
@@ -358,7 +358,7 @@ class broadcast_matrices(object):
 def inv(A):
     inv = linalg.inv
     result = inv(A)
-    result = hfarray(result, dims=A.info)
+    result = hfarray(result, dims=A.dims)
     return result
 
 
@@ -366,9 +366,9 @@ def matrix_multiply_old(A, B):
     dot = np.dot
     res = broadcast_matrices((A, B))
     x = dot(firstelement(A), firstelement(B))
-    resinfo = res._broadcasted[0].info
+    resdims = res._broadcasted[0].dims
     resempty = np.empty(res.outershape + x.shape, dtype=x.dtype)
-    result = hfarray(resempty, dims=resinfo)
+    result = hfarray(resempty, dims=resdims)
     for a, b, r in broadcast_matrices((A, B, result)):
         r[...] = dot(a, b)
     return result
@@ -376,13 +376,13 @@ def matrix_multiply_old(A, B):
 
 def matrix_multiply(a, b):
     """Multiply arrays of matrices.
-    
+
     a and b are hfarrays containing dimensions DimMatrix_i and DimMatrix_j.
     Matrix multiplication is done by broadcasting the other dimensions first.
     """
     A, B = make_same_info(a, b)
     res = np.einsum("...ij,...jk->...ik", A, B)
-    return hfarray(res, dims=A.info)
+    return hfarray(res, dims=A.dims)
 
 
 def flatten_non_matrix(A):
@@ -395,14 +395,14 @@ def flatten_non_matrix(A):
 def det(A):
     det = linalg.det
     result = det(A)
-    result = hfarray(result, dims=A.info[:-2])
+    result = hfarray(result, dims=A.dims[:-2])
     return result
 
 
 def solve_Ab(A, b, squeeze=True):
     AA, bb = make_same_info(A, b)
     x = np.linalg.solve(AA, bb)
-    result = hfarray(x, dims=bb.info)
+    result = hfarray(x, dims=bb.dims)
     if squeeze:
         result = result.squeeze()
     return result
@@ -412,9 +412,9 @@ def lstsq(A, b, squeeze=True):
     lstsq = np.linalg.lstsq
     res = broadcast_matrices((A, b))
     x, residuals, rank, s = lstsq(firstelement(res._broadcasted[0]), firstelement(res._broadcasted[1]))
-    xinfo = res._broadcasted[0].info
+    xdims = res._broadcasted[0].dims
     xempty = np.empty(res.outershape + x.shape, dtype=x.dtype)
-    xresult = hfarray(xempty, dims=xinfo)
+    xresult = hfarray(xempty, dims=xdims)
 
     for a, b, rx in broadcast_matrices((A, b, xresult)):
         rx[...], _, _, _ = lstsq(a, b)

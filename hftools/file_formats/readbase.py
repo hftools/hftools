@@ -179,7 +179,7 @@ def combine_elements_to_matrix(data, name):
     else:
         raise Exception("Can not build complete matrix using elements with name %r"%name)
 
-    data[name] = make_matrix(np.array(x), dims=ex.info)
+    data[name] = make_matrix(np.array(x), dims=ex.dims)
     return data
 
 reg_matrix = re.compile("([A-Za-z_]+)([0-9])([0-9])$")
@@ -351,7 +351,7 @@ class ReadFileFormat(object):
                 x[..., idx] = block[elem]
                 del block[elem]
             x.shape = shape + (len(i_indices), len(j_indices),)
-            block[vname] = make_matrix(x, dims=ex.info)
+            block[vname] = make_matrix(x, dims=ex.dims)
 
     def _merge(self, blocks):
         if self.merge:

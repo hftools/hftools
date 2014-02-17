@@ -125,22 +125,25 @@ class ReadCITIFileFormat(ReadFileFormat):
             elif tagname.startswith("SEG"):
                 datalist, = One("SEG", "Missing SEG")(stream)
                 _, start, stop, step = datalist.strip().split()
-                block[name] = DimSweep(name, np.linspace(float(start), float(stop), int(step)))
+                block[name] = DimSweep(name,
+                                       np.linspace(float(start),
+                                                   float(stop),
+                                                   int(step)))
                 One("SEG_LIST_END", "Missing SEG_LIST_END")(stream)
 
         comments.extend(ManyOptional("COMMENT")(stream))
         for idx, com in enumerate(comments):
             if com.startswith("CONSTANT TIME"):
                 date = tuple(com.strip().split()[2:])
-                comments[idx] = "Measurement time: %s-%s-%s %s:%s:%s"%date
+                comments[idx] = "Measurement time: %s-%s-%s %s:%s:%s" % date
         block.comments = Comments(comments)
         shape = tuple(block.ivardata[i[0]].data.shape[0] for i in varnames)
-        info = tuple(block.ivardata[i[0]] for i in varnames)
+        dims = tuple(block.ivardata[i[0]] for i in varnames)
         for name, typ in datanames:
             One("DATA_LIST_BEGIN", "Missing BEGIN")(stream)
             datalist = array(handle_data(ManyOptional("DATA")(stream), typ))
             datalist.shape = shape
-            block[name] = hfarray(datalist, info)
+            block[name] = hfarray(datalist, dims=dims)
             One("DATA_LIST_END", "Missing END")(stream)
         yield block
 
@@ -190,8 +193,8 @@ def format_citi_block(inblock):
         if is_numlike(value):
             if hftools.dataset.ismatrix(value):
                 names = []
-                for i in hfarray(value.info[-2]):
-                    for j in hfarray(value.info[-1]):
+                for i in hfarray(value.dims[-2]):
+                    for j in hfarray(value.dims[-1]):
                         names.append("%s%s%s" % (name, i + 1, j + 1))
             else:
                 names = [name]
@@ -213,8 +216,8 @@ def format_citi_block(inblock):
         if is_numlike(value):
             if hftools.dataset.ismatrix(value):
                 values = []
-                for i in hfarray(value.info[-2]):
-                    for j in hfarray(value.info[-1]):
+                for i in hfarray(value.dims[-2]):
+                    for j in hfarray(value.dims[-1]):
                         values.append(value[..., i, j])
             else:
                 values = [value]

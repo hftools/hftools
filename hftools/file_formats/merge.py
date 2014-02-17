@@ -6,22 +6,22 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
-import os, pdb, sys, itertools
-from operator import mul
-from hftools.dataset import DataDict, DimSweep, DimPartial, hfarray, DataBlock, DimRep
+import itertools
+from hftools.dataset import DataDict, DimSweep, DimPartial, hfarray,\
+    DataBlock, DimRep
 from hftools.file_formats.common import Comments
-from hftools.core.exceptions import HFToolsIOError
 from numpy import array, empty
 import numpy as np
 from collections import OrderedDict
 
+
 class HFToolsHyperCubeError(ValueError):
     pass
+
 
 def merge_blocks_to_association_list(blocks):
     data = DataDict()
     coords = []
-    varnames = blocks[0].vardata.keys()
 
     # Create DataDict with one entry per variable in the blocks
     # For each variable add a dictionary that is indexed by the DimPartials
@@ -34,7 +34,7 @@ def merge_blocks_to_association_list(blocks):
         coord = tuple(coord)
         coords.append(coord)
         for v in b.vardata.keys():
-            d = data.setdefault(v, []).append((coord, b.vardata[v]))
+            data.setdefault(v, []).append((coord, b.vardata[v]))
     return data
 
 
@@ -47,19 +47,21 @@ def association_list_in_hypercube_order(association_list):
     if len(p) != len(association_list):
         msg = ("Could not make a hypercube of blocks with DimPartials.\n"
                " Indices %r are incomplete, there are %s elements but "
-               "there should be %s"%(names, len(association_list), len(p)))
+               "there should be %s" % (names, len(association_list), len(p)))
         raise HFToolsHyperCubeError(msg)
 
     out = []
 
-    for i, int_i in zip(itertools.product(*[sorted(x) for x in uniq]), itertools.product(*[range(len(x)) for x in uniq])):
+    for i, int_i in zip(itertools.product(*[sorted(x) for x in uniq]),
+                        itertools.product(*[range(len(x)) for x in uniq])):
         idx = indices.index(i)
         out.append((int_i, association_list[idx][1]))
     return names, map(sorted, uniq), out
 
 
 def merge_variable(association_list):
-    names, indices, association_list = association_list_in_hypercube_order(association_list)
+    names, indices, association_list =\
+        association_list_in_hypercube_order(association_list)
     innershape = tuple(len(x) for x in indices)
 
     innerdims = tuple(DimRep(name, i) for name, i in zip(names, indices))
@@ -67,7 +69,7 @@ def merge_variable(association_list):
     if len(association_list) == 1:
         #pdb.set_trace()
         return association_list[0][1], {}, None
-    baseinfo = association_list[0][1].info
+    basedims = association_list[0][1].dims
     prototype = association_list[0][1]
 
     if prototype.dtype.type in (np.unicode_, np.str_):
@@ -92,7 +94,9 @@ def merge_variable(association_list):
         unit = unit.pop()
     else:
         unit = None
-    v = hfarray(result, dims=baseinfo[:1] + innerdims + baseinfo[1:], unit=unit)
+    v = hfarray(result,
+                dims=basedims[:1] + innerdims + basedims[1:],
+                unit=unit)
     if len(association_list[0][0]) == 0:
         indexvars = {}
     else:
@@ -112,22 +116,23 @@ def merge_blocks_do_hyper(blocks):
                 ivars[vname] = v
 
     free_vars = set()
-    for vname, assoc in data.iteritems():        
+    for vname, assoc in data.iteritems():
         free_vars.add(zip(*assoc)[0])
     free_vars = list(free_vars)
     for vname, assoc in data.iteritems():
         v, indexvars, dim = merge_variable(assoc)
         outdata[vname] = v
         for iname, value in indexvars.iteritems():
-            outdata.ivardata[iname] = value.info[0]
+            outdata.ivardata[iname] = value.dims[0]
 
     for v in outdata.vardata.keys():
         if v in outdata.ivardata:
             del outdata.vardata[v]
     for v in outdata.vardata.values():
-        for k in v.info:
+        for k in v.dims:
             if k.name in outdata.ivardata:
-                if isinstance(k, DimRep) and not isinstance(outdata.ivardata[k.name], DimRep):
+                if ((isinstance(k, DimRep) and
+                     not isinstance(outdata.ivardata[k.name], DimRep))):
                     outdata.replace_dim(outdata.ivardata[k.name], k)
     cmt = Comments()
     for block in blocks:
@@ -143,7 +148,6 @@ def merge_blocks_do_hyper(blocks):
     return outdata
 
 
-
 def get_partials(db):
     partials = {}
     for k, v in db.ivardata.items():
@@ -151,12 +155,11 @@ def get_partials(db):
             partials.setdefault(k, []).append(v)
     return partials
 
+
 def merge_blocks(blocks, hyper=False, indexed=False):
     db = DataBlock()
     dimpartialgroups = OrderedDict()
-    variables = OrderedDict()
-    variableinfo = OrderedDict()
-    
+
     for b in blocks:
         parts = get_partials(b)
         partgroup = dimpartialgroups.setdefault(tuple(parts.keys()), {})
@@ -165,9 +168,10 @@ def merge_blocks(blocks, hyper=False, indexed=False):
 
     for idx, dims in enumerate(dimpartialgroups.values(), 1):
         for k, v in dims.items():
-            db[k] = hfarray([x.data[0] for x in v], dims=(DimSweep("INDEX%s"%idx, len(v)),), unit=x.unit)
+            dims = (DimSweep("INDEX%s" % idx, len(v)),)
+            db[k] = hfarray([x.data[0] for x in v],
+                            dims=dims, unit=x.unit)
 
-    
     varnames = set()
     for b in blocks:
         for k, v in b.ivardata.items():
@@ -175,7 +179,7 @@ def merge_blocks(blocks, hyper=False, indexed=False):
                 db[k] = v
         for k in b.vardata.keys():
             varnames.add(k)
-    
+
     for vname in varnames:
         v = []
         for b in blocks:
@@ -186,12 +190,12 @@ def merge_blocks(blocks, hyper=False, indexed=False):
         if v:
             k = tuple(partials.keys())
             if k:
-                ri = (db[dimpartialgroups[k].keys()[0]].info[0],)
+                ri = (db[dimpartialgroups[k].keys()[0]].dims[0],)
             else:
                 ri = tuple()
-            value = hfarray(v, dims=ri + v[0].info, unit=v[0].unit)
-            if v[0].info and isinstance(v[0].info[0], DimSweep):
-                value = value.reorder_dimensions(v[0].info[0])
+            value = hfarray(v, dims=ri + v[0].dims, unit=v[0].unit)
+            if v[0].dims and isinstance(v[0].dims[0], DimSweep):
+                value = value.reorder_dimensions(v[0].dims[0])
             db[vname] = value
     cmt = Comments()
     for block in blocks:
@@ -199,53 +203,51 @@ def merge_blocks(blocks, hyper=False, indexed=False):
             cmt.extend(block.comments)
     db.comments = cmt
     db.blockname = blocks[0].blockname
-    
-    olddb = db
+
     if hyper:
         for vnames in dimpartialgroups.keys():
             if vnames:
-                hyperindex = db[vnames[0]].info[0]
+                hyperindex = db[vnames[0]].dims[0]
                 db = db.hyper(vnames, hyperindex, all=True)
     db = db.squeeze()
-    return db    
-
+    return db
 
 
 if __name__ == '__main__':
     blocks = []
     blocks2 = []
-    an = [(1,1,1), (1,1,2),
-         (2,1,1), (2,1,2),
-         (2,2,1), (2,2,2),
-         (2,3,1), (2,3,2)]
-    
-    a = [(1,1,1),
-         (1,1,2),
-         (1,2,1),
-         (1,2,2),
-         (2,1,1),
-         (2,1,2),
-         (2,2,1),
-         (2,2,2),
+    an = [(1, 1, 1), (1, 1, 2),
+          (2, 1, 1), (2, 1, 2),
+          (2, 2, 1), (2, 2, 2),
+          (2, 3, 1), (2, 3, 2)]
+
+    a = [(1, 1, 1),
+         (1, 1, 2),
+         (1, 2, 1),
+         (1, 2, 2),
+         (2, 1, 1),
+         (2, 1, 2),
+         (2, 2, 1),
+         (2, 2, 2),
          ]
-    
-    fi = DimSweep("f", array([10,20,30]))
-    for i,k,j in a:
+
+    fi = DimSweep("f", array([10, 20, 30]))
+    for i, k, j in a:
         db = DataBlock()
         db.I = DimPartial("I", array(i))
         db.K = DimPartial("K", array(k))
         db.J = DimPartial("J", array(j))
-        db.x = hfarray([11,12,13], dims=(fi,))*(i+k*10+j*100)
-        db.y = hfarray([11,12,13], dims=(fi,))*(i+k*10+j*100)
+        db.x = hfarray([11, 12, 13], dims=(fi, )) * (i + k * 10 + j * 100)
+        db.y = hfarray([11, 12, 13], dims=(fi, )) * (i + k * 10 + j * 100)
         blocks.append(db)
 
-    for i,k,j in itertools.product([1,2], [3,4], [5,6,7]):
+    for i, k, j in itertools.product([1, 2], [3, 4], [5, 6, 7]):
         db = DataBlock()
         db.I = DimPartial("I", array(i))
         db.K = DimPartial("K", array(k))
         db.J = DimPartial("J", array(j))
-        db.x = hfarray([11,12,13], dims=(fi,))*(i+k*10+j*100)
-        db.y = hfarray([11,12,13], dims=(fi,))*(i+k*10+j*100)
+        db.x = hfarray([11, 12, 13], dims=(fi, )) * (i + k * 10 + j * 100)
+        db.y = hfarray([11, 12, 13], dims=(fi, )) * (i + k * 10 + j * 100)
         blocks2.append(db)
 
     outdata = merge_blocks(blocks)

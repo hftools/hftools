@@ -50,8 +50,8 @@ class Test_DataBlock_replace_ivardata(TestCase):
         a.i = DimSweep("i", [1, 2, 3])
 
         def funk(a):
-            info = (DimSweep("i", [1]), DimSweep("j", [1]))
-            a.i = hfarray([[1]], dims=info)
+            dims = (DimSweep("i", [1]), DimSweep("j", [1]))
+            a.i = hfarray([[1]], dims=dims)
         self.assertRaises(AttributeError, funk, a)
 
 
@@ -132,9 +132,9 @@ class Test_DataBlock2(Test_DataBlock):
 class Test_DataBlock_rename(TestCase):
     def test_1(self):
         d = DataBlock()
-        info = (DimSweep("Freq[Hz]", 3),)
-        d.P = hfarray([1, 2, 3], dims=info)
-        d.L = hfarray([10, 20, 30], dims=info)
+        dims = (DimSweep("Freq[Hz]", 3),)
+        d.P = hfarray([1, 2, 3], dims=dims)
+        d.L = hfarray([10, 20, 30], dims=dims)
         self.assertEqual(d.allvarnames, ["Freq[Hz]", "P", "L"])
         d.rename("P", "H")
         self.assertEqual(d.allvarnames, ["Freq[Hz]", "H", "L"])
@@ -147,10 +147,10 @@ class Test_DataBlock_rename(TestCase):
         d = DataBlock()
         fi = DimSweep("Freq[Hz]", 3)
         gi = DimSweep("P[W]", 2)
-        info = (fi,)
+        dims = (fi,)
         info2 = (fi, gi)
         info3 = (gi,)
-        d.P = hfarray([1, 2, 3], dims=info)
+        d.P = hfarray([1, 2, 3], dims=dims)
         d.Q = hfarray([3, 2], dims=info3)
         d.L = hfarray([[10, 20, 30], [11, 21, 31]], dims=info2)
         self.assertEqual(d.allvarnames, ["Freq[Hz]", "P[W]", "P", "Q", "L"])
@@ -167,10 +167,10 @@ class Test_allvarnames(TestCase):
         d = DataBlock()
         fi = DimSweep("Freq[Hz]", 3)
         gi = DimSweep("P[W]", 3)
-        info = (fi,)
+        dims = (fi,)
         info2 = (fi, gi)
         info3 = (gi,)
-        d["P[W]"] = hfarray([10, 20, 30], dims=info)
+        d["P[W]"] = hfarray([10, 20, 30], dims=dims)
         d["f"] = hfarray([[1, 2, 3]] * 3, dims=info2)
         self.assertEqual(d.allvarnames, ["Freq[Hz]", "P[W]", "f"])
         self.assertAllclose(d["P[W]"], [0, 1, 2])
@@ -179,11 +179,11 @@ class Test_allvarnames(TestCase):
         d = DataBlock()
         fi = DimSweep("Freq[Hz]", 3)
         gi = DimSweep("P[W]", 3)
-        info = (fi,)
+        dims = (fi,)
         info2 = (fi, gi)
         info3 = (gi,)
         d["f"] = hfarray([[1, 2, 3]] * 3, dims=info2)
-        d["P[W]"] = hfarray([10, 20, 30], dims=info)
+        d["P[W]"] = hfarray([10, 20, 30], dims=dims)
         self.assertEqual(d.allvarnames, ["Freq[Hz]", "P[W]", "f"])
         self.assertAllclose(d["P[W]"], [10, 20, 30])
 
@@ -193,10 +193,10 @@ class Test_outputformat(TestCase):
         d = DataBlock()
         fi = DimSweep("Freq[Hz]", 3)
         gi = DimSweep("P[W]", 3)
-        info = (fi,)
+        dims = (fi,)
         info2 = (fi, gi)
         d["f"] = hfarray([[1, 2, 3]] * 3, dims=info2, outputformat="%.5f")
-        d["P"] = hfarray([10, 20, 30], dims=info, outputformat="%.7f")
+        d["P"] = hfarray([10, 20, 30], dims=dims, outputformat="%.7f")
         self.assertEqual(d["f"].outputformat, "%.5f")
         self.assertEqual(d["P"].outputformat, "%.7f")
         d.outputformat = "%.9f"
@@ -210,10 +210,10 @@ class Test_copy_view(TestCase):
     def test_copy_1(self):
         d = DataBlock()
         fi = DimSweep("Freq[Hz]", 3)
-        info = (fi,)
-        d["a"] = hfarray([1, 2, 3], dims=info,
+        dims = (fi,)
+        d["a"] = hfarray([1, 2, 3], dims=dims,
                             outputformat="%.5f", unit="V")
-        d["b"] = hfarray([10, 20, 30], dims=info,
+        d["b"] = hfarray([10, 20, 30], dims=dims,
                             outputformat="%.7f", unit="A")
         c = d.copy()
         self.assertEqual(d.ivardata.order, c.ivardata.order)
@@ -235,11 +235,11 @@ class Test_copy_view(TestCase):
     def test_copy_2(self):
         d = DataBlock()
         fi = DimSweep("Freq[Hz]", 3)
-        info = (fi,)
+        dims = (fi,)
         d.comments = Comments(["Hej=10"])
-        d["a"] = hfarray([1, 2, 3], dims=info,
+        d["a"] = hfarray([1, 2, 3], dims=dims,
                             outputformat="%.5f", unit="V")
-        d["b"] = hfarray([10, 20, 30], dims=info,
+        d["b"] = hfarray([10, 20, 30], dims=dims,
                             outputformat="%.7f", unit="A")
         c = d.copy()
         self.assertEqual(c.allvarnames, d.allvarnames)
@@ -261,10 +261,10 @@ class Test_copy_view(TestCase):
         d = DataBlock()
         d.comments = Comments(["Hej=10"])
         fi = DimSweep("Freq[Hz]", 3)
-        info = (fi,)
-        d["a"] = hfarray([1, 2, 3], dims=info,
+        dims = (fi,)
+        d["a"] = hfarray([1, 2, 3], dims=dims,
                             outputformat="%.5f", unit="V")
-        d["b"] = hfarray([10, 20, 30], dims=info,
+        d["b"] = hfarray([10, 20, 30], dims=dims,
                             outputformat="%.7f", unit="A")
         c = d.view()
         self.assertEqual(c.allvarnames, d.allvarnames)
@@ -287,20 +287,20 @@ class Test_filter(TestCase):
         d = DataBlock()
         fi = DimSweep("Freq[Hz]", 3)
         gi = DimSweep("g", 4)
-        info = (fi,)
-        d["a"] = hfarray([1, 2, 3], dims=info,
+        dims = (fi,)
+        d["a"] = hfarray([1, 2, 3], dims=dims,
                             outputformat="%.5f", unit="V")
-        d["b"] = hfarray([10, 20, 30], dims=info,
+        d["b"] = hfarray([10, 20, 30], dims=dims,
                             outputformat="%.7f", unit="A")
         d["c"] = hfarray([10, 20, 30, 40], dims=(gi,),
                             outputformat="%.7f", unit="A")
 
         w = d.filter(d["Freq[Hz]"] <= 1)
         self.assertEqual(id(d.comments), id(w.comments))
-        self.assertEqual(w["Freq[Hz]"].info, (DimSweep("Freq[Hz]", 2),))
-        self.assertEqual(w.a.info, (DimSweep("Freq[Hz]", 2),))
-        self.assertEqual(w.b.info, (DimSweep("Freq[Hz]", 2),))
-        self.assertEqual(w.c.info, (DimSweep("g", 4),))
+        self.assertEqual(w["Freq[Hz]"].dims, (DimSweep("Freq[Hz]", 2),))
+        self.assertEqual(w.a.dims, (DimSweep("Freq[Hz]", 2),))
+        self.assertEqual(w.b.dims, (DimSweep("Freq[Hz]", 2),))
+        self.assertEqual(w.c.dims, (DimSweep("g", 4),))
 
         self.assertAllclose(w["Freq[Hz]"], [0, 1])
         self.assertAllclose(w.a, [1, 2])
@@ -314,8 +314,8 @@ class Test_filter(TestCase):
         d = DataBlock()
         fi = DimSweep("Freq[Hz]", 3)
         gi = DimSweep("g", 4)
-        info = (fi, gi)
-        d["a"] = hfarray([[1, 2, 3]] * 4, dims=info,
+        dims = (fi, gi)
+        d["a"] = hfarray([[1, 2, 3]] * 4, dims=dims,
                             outputformat="%.5f", unit="V")
         self.assertRaises(ValueError, d.filter, d.a < 2)
 
@@ -323,8 +323,8 @@ class Test_filter(TestCase):
         d = DataBlock()
         fi = DimSweep("Freq[Hz]", [10, 20, 30, 40, 50])
         gi = DimSweep("g", 4)
-        info = (fi, gi)
-        d["a"] = hfarray([[1, 2, 3, 4]] * 5, dims=info,
+        dims = (fi, gi)
+        d["a"] = hfarray([[1, 2, 3, 4]] * 5, dims=dims,
                             outputformat="%.5f", unit="V")
         x = DimSweep("Freq", [20, 40])
         reset_hftools_warnings()
@@ -339,8 +339,8 @@ class Test_filter(TestCase):
         d = DataBlock()
         fi = DimSweep("Freq[Hz]", [10, 20, 30, 40, 50])
         gi = DimSweep("g", 4)
-        info = (fi, gi)
-        d["a"] = hfarray([[1, 2, 3, 4]] * 5, dims=info,
+        dims = (fi, gi)
+        d["a"] = hfarray([[1, 2, 3, 4]] * 5, dims=dims,
                             outputformat="%.5f", unit="V")
         x = DimSweep("Freq[Hz]", [20, 40])
         dres = d.filter(hfarray(x))
@@ -352,10 +352,10 @@ class Test_sort(TestCase):
         d = DataBlock()
         fi = DimSweep("Freq[Hz]", 3)
         gi = DimSweep("g", 4)
-        info = (fi,)
-        d["a"] = hfarray([3, 2, 1], dims=info,
+        dims = (fi,)
+        d["a"] = hfarray([3, 2, 1], dims=dims,
                             outputformat="%.5f", unit="V")
-        d["b"] = hfarray([30, 10, 20], dims=info,
+        d["b"] = hfarray([30, 10, 20], dims=dims,
                             outputformat="%.7f", unit="A")
         d["c"] = hfarray([30, 20, 10, 40], dims=(gi,),
                             outputformat="%.7f", unit="A")
@@ -374,7 +374,7 @@ class Test_sort(TestCase):
         self.assertAllclose(result.c, [30, 20, 10, 40])
         facit = hfarray([[30, 20, 10, 40],
                             [60, 40, 20, 80],
-                            [90, 60, 30, 120]], dims=d.ac.info)
+                            [90, 60, 30, 120]], dims=d.ac.dims)
         self.assertAllclose(result.ac, facit)
 
     def test_2(self):
@@ -395,8 +395,8 @@ class Test_remove_rep(TestCase):
         gi = DimRep("g", 2)
         hi = DimRep("h", 3)
         ji = DimRep("j", 4)
-        info = (fi,)
-        d["a"] = hfarray([3, 2, 1], dims=info,
+        dims = (fi,)
+        d["a"] = hfarray([3, 2, 1], dims=dims,
                             outputformat="%.5f", unit="V")
         d["b"] = hfarray([30, 10], dims=(gi,),
                             outputformat="%.7f", unit="A")
@@ -415,8 +415,8 @@ class Test_hyper(TestCase):
         d = DataBlock()
         gi = DimSweep("Index", 6)
         ri = DimRep("Rep", 2)
-        info = (gi,)
-        d["a"] = hfarray([1, 1, 2, 2, 3, 3], dims=info,
+        dims = (gi,)
+        d["a"] = hfarray([1, 1, 2, 2, 3, 3], dims=dims,
                             outputformat="%.5f", unit="V")
         d["b"] = hfarray([10, 20, 10, 20, 10, 20],
                             dims=(gi,), outputformat="%.7f", unit="A")
@@ -573,13 +573,13 @@ class Test_replace_dim(TestCase):
 
     def test_1(self):
         self.d.replace_dim("g", self.hi)
-        self.assertTrue(self.hi not in self.d["Vds"].info)
-        self.assertTrue(self.hi in self.d["Id"].info)
+        self.assertTrue(self.hi not in self.d["Vds"].dims)
+        self.assertTrue(self.hi in self.d["Id"].dims)
 
     def test_2(self):
         self.d.replace_dim("g", DimRep)
-        self.assertIsInstance(self.d.Id.info[0], DimRep)
-        self.assertEqual(self.d.Id.info[0].name, "g")
+        self.assertIsInstance(self.d.Id.dims[0], DimRep)
+        self.assertEqual(self.d.Id.dims[0].name, "g")
 
 
 class Test_blockname(TestCase):

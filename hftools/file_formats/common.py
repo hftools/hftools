@@ -333,7 +333,7 @@ def normalize_names(data):
     return out
 
 
-def get_info_names(*a):
+def get_dims_names(*a):
     return tuple([x.name for x in a])
 
 
@@ -342,8 +342,8 @@ def make_col_from_matrix(header, columns, fmt_matrix, fortranorder=False):
     fullcolumns = []
     for colname, col in zip(header, columns):
         if ismatrix(col):
-            for i in range(col.info[-2].data.shape[0]):
-                for j in range(col.info[-1].data.shape[0]):
+            for i in range(col.dims[-2].data.shape[0]):
+                for j in range(col.dims[-1].data.shape[0]):
                     if fortranorder:
                         I, J = j, i
                     else:
@@ -404,11 +404,11 @@ def make_block_iterator(data, first=False):
         raise StopIteration
     d = data.vardata.values()[0]
     if ismatrix(d):
-        infonames = [x.name for x in d.info[:-2]]
+        dimsnames = [x.name for x in d.dims[:-2]]
     else:
-        infonames = [x.name for x in d.info]
-    infodata = [hfarray(data.ivardata[iname]) for iname in infonames]
-    infoidx = [range(x.shape[0]) for x in infodata]
+        dimsnames = [x.name for x in d.dims]
+    dimsdata = [hfarray(data.ivardata[iname]) for iname in dimsnames]
+    dimsidx = [range(x.shape[0]) for x in dimsdata]
     if first:
         if data.comments:
             comments = data.comments.copy()
@@ -417,14 +417,14 @@ def make_block_iterator(data, first=False):
             comments = Comments()
     else:
         comments = Comments()
-    for enum, idx in enumerate(itertools.product(*infoidx[1:])):
+    for enum, idx in enumerate(itertools.product(*dimsidx[1:])):
         sweepvars = []
-        for iname, dim, i in zip(infonames[1:], infodata[1:], idx):
+        for iname, dim, i in zip(dimsnames[1:], dimsdata[1:], idx):
             fmt = getattr(dim, "outputformat", "%.16e")
             sweepvars.append((iname, fmt, dim[i]))
-        if infonames:
-            header = [infonames[0]] + data.vardata.keys()
-            columns = infodata[:1] + [col[(slice(None), ) + idx]
+        if dimsnames:
+            header = [dimsnames[0]] + data.vardata.keys()
+            columns = dimsdata[:1] + [col[(slice(None), ) + idx]
                                       for col in data.vardata.values()]
             fmts = [getattr(x, "outputformat", "%.16e") for x in columns]
         else:
@@ -432,7 +432,7 @@ def make_block_iterator(data, first=False):
             columns = []
             fmts = []
             for k, v in data.vardata.iteritems():
-                if v.info == tuple():
+                if v.dims == tuple():
                     comments.property[k] = v
 
         if enum:
@@ -446,13 +446,13 @@ def db_iterator(indb, fmt_block_generator):
     used_ivars = set()
     for vname in indb.vardata.keys():
         if ismatrix(indb.vardata[vname]):
-            infonames = get_info_names(*indb[vname].info)[:-2]
-            names = get_info_names(*indb[vname].info)[-2:]
+            dimsnames = get_dims_names(*indb[vname].dims)[:-2]
+            names = get_dims_names(*indb[vname].dims)[-2:]
             used_ivars = used_ivars.union(names)
         else:
-            infonames = get_info_names(*indb[vname].info)
+            dimsnames = get_dims_names(*indb[vname].dims)
 
-        q = datablock.setdefault(infonames, DataBlock())
+        q = datablock.setdefault(dimsnames, DataBlock())
         if q.comments is None:
             q.comments = indb.comments
         q[vname] = indb[vname]
