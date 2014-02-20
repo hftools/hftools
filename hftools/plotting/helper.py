@@ -66,8 +66,8 @@ def ylabel_fmt(fmt, unit=None, axes=None):
 
 default_unit_names = {"s": "Time",
                       u"s": "Time",
-                      "Hz": "Frequency", 
-                      u"Hz": "Frequency", 
+                      "Hz": "Frequency",
+                      u"Hz": "Frequency",
                       "m": "Length",
                       u"m": "Length",
                        }
@@ -238,7 +238,7 @@ class UnitFormatter(FormatStrFormatter):
 
 
 def get_info_names(x):
-    return [y.name for y in x.info]
+    return [y.name for y in x.dims]
 
 
 class HFToolsAxes(Axes):
@@ -249,13 +249,13 @@ class HFToolsAxes(Axes):
     linecycle = ['-', '--', '-.', ':']
 
     def _plot_helper(self, x, y, *args, **kwargs):
-        if not hasattr(y, "info"):
+        if not hasattr(y, "dims"):
             return Axes.plot(self, x, y, *args, **kwargs)
         if x.ndim == 1 and y.ndim == 1:
             return Axes.plot(self, x, y, *args, **kwargs)
         else:
             return Axes.plot(self, x, remove_tail(y), *args, **kwargs)
-        
+
             Ns = y.shape[1:4]
             kw = kwargs.copy()
             lines = []
@@ -263,7 +263,7 @@ class HFToolsAxes(Axes):
                 C = zip(itertools.cycle(self.colorcycle), range(Ns[0]))
                 for c, i in C:
                     #kw.update(dict(color=c))
-                    if hasattr(x, "info") and (get_info_names(x) ==
+                    if hasattr(x, "dims") and (get_info_names(x) ==
                                                get_info_names(y)):
                         xx = x[:, i].squeeze()
                     else:
@@ -275,7 +275,7 @@ class HFToolsAxes(Axes):
                 M = zip(itertools.cycle(self.markercycle), range(Ns[1]))
                 for c, i in C:
                     for m, j in M:
-                        if hasattr(x, "info") and (get_info_names(x) ==
+                        if hasattr(x, "dims") and (get_info_names(x) ==
                                                    get_info_names(y)):
                             xx = x[:, i, j].squeeze()
                         else:
@@ -291,7 +291,7 @@ class HFToolsAxes(Axes):
                 for c, i in C:
                     for m, j in M:
                         for l, k in L:
-                            if hasattr(x, "info") and (get_info_names(x) ==
+                            if hasattr(x, "dims") and (get_info_names(x) ==
                                                        get_info_names(y)):
                                 xx = x[:, i, j, k].squeeze()
                             else:
@@ -313,9 +313,9 @@ class HFToolsAxes(Axes):
 
         if ((len(vars) == 1 and
              isinstance(vars[0], hfarray) and
-             len(vars[0].info) >= 1)):
+             len(vars[0].dims) >= 1)):
             y = vars[0]
-            x = hfarray(y.info[0])
+            x = hfarray(y.dims[0])
             vars = (x, y)
 
         if len(vars) == 1:
@@ -555,9 +555,9 @@ class ComplexPolarAxes(PolarAxes):
 
         if ((len(vars) == 1 and
              isinstance(vars[0], hfarray) and
-             len(vars[0].info) >= 1)):
+             len(vars[0].dims) >= 1)):
             y = vars[0]
-            x = hfarray(y.info[0])
+            x = hfarray(y.dims[0])
             vars = (x, y)
 
         if len(vars) == 1:
@@ -605,17 +605,17 @@ def cplx_polar_projection(x, y):
 
 _projfun = dict(db=lambda x, y: (x, hftools.math.dB(y)),
                 db10=lambda x, y: (x, 10 * np.log10(abs(y))),
-                mag=lambda x, y: (x, hfarray(np.abs(y), dims=y.info)),
+                mag=lambda x, y: (x, hfarray(np.abs(y), dims=y.dims)),
                 mag_square=lambda x, y: (x, hfarray(np.abs(y) ** 2,
-                                                       info=y.info)),
+                                                       dims=y.dims)),
                 rad=lambda x, y: (x, hfarray(np.angle(y, deg=False),
-                                                info=y.info)),
+                                                dims=y.dims)),
                 deg=lambda x, y: (x, hfarray(np.angle(y, deg=True),
-                                                info=y.info)),
+                                                dims=y.dims)),
                 unwraprad=lambda x, y: (x, unwrap_phase(y)),
                 unwrapdeg=lambda x, y: (x, unwrap_phase(y, deg=True)),
-                imag=lambda x, y: (x, hfarray(np.imag(y), dims=y.info)),
-                real=lambda x, y: (x, hfarray(np.real(y), dims=y.info)),
+                imag=lambda x, y: (x, hfarray(np.imag(y), dims=y.dims)),
+                real=lambda x, y: (x, hfarray(np.real(y), dims=y.dims)),
                 groupdelay=lambda x, y: delay(x, y),
                 cplxpolar=cplx_polar_projection)
 _projfun["x-si"] = lambda x, y: (x, y)

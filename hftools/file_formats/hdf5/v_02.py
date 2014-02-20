@@ -26,18 +26,18 @@ dimrep = {"DimRep": DimRep,
 
 def getvar(db, key):
     X = db[key]
-    
 
-    info = []
+
+    dims = []
     for x in X.dims:
         if len(x):
             dim = dimrep[x[0].attrs.get("dimtype", "DimSweep")](x[0].name.strip("/"), x[0][...], unit=x[0].attrs.get("unit", None))
-            info.append(dim)
+            dims.append(dim)
 
     unit = X.attrs.get("unit", None)
     outputformat = X.attrs.get("outputformat", None)
-    if len(info) == len(X.dims):
-        return hfarray(X, dims=info, unit=unit, outputformat=outputformat)
+    if len(dims) == len(X.dims):
+        return hfarray(X, dims=dims, unit=unit, outputformat=outputformat)
     elif len(X.dims) == 1 and "dimtype" in X.attrs:
         dim = dimrep[X.attrs.get("dimtype", "DimSweep")](X.name.strip("/"), X[...], unit=unit)
         return hfarray(X, dims=(dim,), unit=unit)
@@ -69,7 +69,7 @@ def save_hdf5(db, filehandle, **kw):
             filehandle[k].attrs["unit"] = v.unit
         if v.outputformat:
             filehandle[k].attrs["outputformat"] = v.outputformat
-        
+
     for k, data in db.vardata.items():
         if data.ndim:
             if data.dtype.name.startswith("datetime64"):
@@ -86,6 +86,6 @@ def save_hdf5(db, filehandle, **kw):
             filehandle[k].attrs["unit"] = data.unit
         if data.outputformat:
             filehandle[k].attrs["outputformat"] = data.outputformat
-        for idx, dv in enumerate(data.info):
+        for idx, dv in enumerate(data.dims):
             filehandle[k].dims.create_scale(filehandle[dv.name])
-            filehandle[k].dims[idx].attach_scale(filehandle[dv.name])  
+            filehandle[k].dims[idx].attach_scale(filehandle[dv.name])
