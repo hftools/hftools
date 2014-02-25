@@ -19,7 +19,6 @@ import datetime
 import numpy as np
 
 from hftools.utils import is_numlike, is_integer
-from hftools.core import HFArrayShapeInfoMismatchError
 
 
 def info_has_complex(info):
@@ -209,6 +208,7 @@ class DiagAxis(_DiagAxis):
 
 class DimAnonymous(DiagAxis):
     pass
+
 
 class DimSweep(DiagAxis):
     pass

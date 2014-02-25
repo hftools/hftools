@@ -14,12 +14,10 @@ dim
 
 
 """
-import datetime
 import re
 
 import numpy as np
 
-from hftools.utils import is_numlike, is_integer
 from hftools.constants import convert_with_unit,\
     string_number_with_unit_to_value
 

@@ -31,6 +31,7 @@ from hftools.utils import warn, stable_uniq
 from hftools.dataset.helper import guess_unit_from_varname
 from hftools.py3compat import cast_unicode, cast_str
 
+
 class DataBlockError(Exception):
     pass
 
@@ -429,9 +430,9 @@ class DataBlock(object):
             reorder = tuple([i] + reorder)
             newinfo = tuple([newdim] + newinfo)
             data = data.transpose(*reorder)
-            utdata = hfarray(array(data)[boolarray], newinfo,
-                                unit=data.unit,
-                                outputformat=data.outputformat)
+            utdata = hfarray(array(data)[boolarray], dims=newinfo,
+                             unit=data.unit,
+                             outputformat=data.outputformat)
             dimorder = [x.name for x in self.vardata[v].dims]
             utdata = utdata.reorder_dimensions(*dimorder)
             out[v] = utdata
