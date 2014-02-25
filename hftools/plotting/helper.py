@@ -19,7 +19,6 @@ import numpy as np
 import pylab
 from matplotlib._pylab_helpers import Gcf
 from matplotlib.backends.backend_pdf import PdfPages
-from matplotlib.projections import get_projection_names
 import hftools.math
 from hftools.constants.si_units import si_exp_to_prefixes, _help_format_sci
 from hftools.dataset import hfarray, remove_tail
@@ -70,10 +69,10 @@ default_unit_names = {"s": "Time",
                       u"Hz": "Frequency",
                       "m": "Length",
                       u"m": "Length",
-                       }
+                      }
 
 
-class SimpleUnitFormatter(FormatStrFormatter) :
+class SimpleUnitFormatter(FormatStrFormatter):
     """Only adds the base unit does no prefix magic
     """
     def __init__(self, fmt, set_label_fun=None, label_fmt=None, unit=None):
@@ -152,7 +151,7 @@ class UnitFormatter(FormatStrFormatter):
         self.digs = digs
 
     def __call__(self, x, pos=None):
-        locs = [abs(pos) for pos in self.locs if abs(pos) != 0]
+        locs = [abs(y) for y in self.locs if abs(y) != 0]
         if locs and max(locs) / min(locs) <= 10000:
             _, exponent = _help_format_sci(max(locs), 2)
             div = 10 ** exponent
@@ -228,7 +227,8 @@ class UnitFormatter(FormatStrFormatter):
                 fmt = fmt.replace("[]", u"[%(prefix)sU]")
         elif "[^]" in fmt:
             if self.get_label_unit():
-                fmt = fmt.replace("[^]", ur"$[10^{{%%(powerprefix).0f \rm{{{unit}}}}]$")
+                fmt = fmt.replace("[^]", ur"$[10^{{%%(powerprefix).0f" +
+                                  ur"\rm{{{unit}}}}]$")
             else:
                 fmt = fmt.replace("[^]", ur"$[10^{{%(powerprefix).0f}}]$")
         if "{unit}" in fmt or "{default}" in fmt:
@@ -303,7 +303,10 @@ class HFToolsAxes(Axes):
             return lines
 
     def plot(self, *args, **kwargs):
-        projection = self.name
+        if "projection" in kwargs:
+            projection = kwargs.pop("projection")
+        else:
+            projection = self.name
         vars = args[:2]
         args = args[2:]
 
@@ -607,11 +610,11 @@ _projfun = dict(db=lambda x, y: (x, hftools.math.dB(y)),
                 db10=lambda x, y: (x, 10 * np.log10(abs(y))),
                 mag=lambda x, y: (x, hfarray(np.abs(y), dims=y.dims)),
                 mag_square=lambda x, y: (x, hfarray(np.abs(y) ** 2,
-                                                       dims=y.dims)),
+                                                    dims=y.dims)),
                 rad=lambda x, y: (x, hfarray(np.angle(y, deg=False),
-                                                dims=y.dims)),
+                                             dims=y.dims)),
                 deg=lambda x, y: (x, hfarray(np.angle(y, deg=True),
-                                                dims=y.dims)),
+                                             dims=y.dims)),
                 unwraprad=lambda x, y: (x, unwrap_phase(y)),
                 unwrapdeg=lambda x, y: (x, unwrap_phase(y, deg=True)),
                 imag=lambda x, y: (x, hfarray(np.imag(y), dims=y.dims)),
@@ -619,6 +622,7 @@ _projfun = dict(db=lambda x, y: (x, hftools.math.dB(y)),
                 groupdelay=lambda x, y: delay(x, y),
                 cplxpolar=cplx_polar_projection)
 _projfun["x-si"] = lambda x, y: (x, y)
+_projfun[None] = lambda x, y: (x, y)
 
 
 def is_in_ipython():
