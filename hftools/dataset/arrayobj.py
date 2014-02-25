@@ -687,6 +687,10 @@ class _hfarray(ndarray):
         return self.__mul__(other)
 
     @check_instance
+    def __eq__(self, other):
+        return ndarray.__eq__(self, other)
+
+    @check_instance
     def __rdiv__(self, other):
         return np.divide(other, self)
 
