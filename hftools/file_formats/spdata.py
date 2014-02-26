@@ -16,28 +16,24 @@ SP-Data
     .. autofunction:: normalize_names
 
 """
-import re, pdb, sys, os, itertools
-
+import re
 import numpy as np
-from numpy import array, concatenate, iscomplexobj
 
 from hftools.dataset import DataDict, DataBlock,  DimSweep, DimRep,\
-    DimPartial, hfarray, make_matrix
-from hftools.constants import unit_to_multiplier
+    DimPartial, hfarray
 from hftools.core.exceptions import HFToolsIOError
-from hftools.file_formats.common import Comments, db_iterator, make_col_from_matrix,\
-    format_complex_header, format_unit_header, format_elem
-from hftools.file_formats import merge_blocks
+from hftools.file_formats.common import Comments, db_iterator,\
+    make_col_from_matrix, format_complex_header, format_elem
 from hftools.file_formats.readbase import ReadFileFormat
-from hftools.file_formats.readbase import Stream, Optional, ManyOptional, ManyOptional,\
-    One, Token
-from hftools.utils import glob, to_numeric
+from hftools.file_formats.readbase import Token
+from hftools.utils import to_numeric
 
 
 class SPDataIOError(HFToolsIOError):
     pass
 
-reg_num_unit = re.compile(r"^[ \t]*([-0-9.eE]+) ?([dcmunpfakMGTPE]?[A-Za-z/]+)$")
+reg_num_unit = re.compile(r"^[ \t]*([-0-9.eE]+) " +
+                          r"?([dcmunpfakMGTPE]?[A-Za-z/]+)$")
 """
 def match_numunit(x):
     res = reg_num_unit.match(x)
@@ -66,21 +62,18 @@ class ReadSPFileFormat(ReadFileFormat):
                     (tag, line) where tag is one of
                     "Comment", "Header", and "Data"
         """
-        comments = []
-        data = []
-        header = None
-        Nhead = None
 
         for radidx, rad in enumerate(stream):
             rad = rad.strip()
             lineno = radidx + 1
-            if not rad: #skip empty lines
+            if not rad:  # skip empty lines
                 continue
-            elif rad.startswith("!Fullcomments") or rad.startswith("!PROPERTIES"):
+            elif ((rad.startswith("!Fullcomments") or
+                   rad.startswith("!PROPERTIES"))):
                 continue
             elif rad.startswith("!END-PROPERTIES"):
                 yield Token("ENDPROP", lineno, rad)
-            elif rad.startswith("!"): #Comment line with potential information
+            elif rad.startswith("!"):  # Comment line with information
                 yield Token("Comment", lineno, rad[1:])
             elif reg_header.match(rad[0]):
                 yield Token("Header", lineno, rad)
@@ -118,15 +111,15 @@ class ReadSPFileFormat(ReadFileFormat):
                 except StopIteration:
                     raise SPDataIOError("File can not end in header")
             else:
-                raise SPDataIOError ("Missing header")
-            while running and (token == "Data"):   
+                raise SPDataIOError("Missing header")
+            while running and (token == "Data"):
                 data.append(map(to_numeric, rad.split("\t")))
                 try:
                     token, lineno, rad = stream.next()
                 except StopIteration:
                     running = False
             yield out
-        
+
     def parse_blocks(self, stream):
         for comments, header, data in stream:
             db = DataBlock()
@@ -134,18 +127,21 @@ class ReadSPFileFormat(ReadFileFormat):
             if header and data:
                 header = header[0].strip().split("\t")
                 Nhead = len(header)
-                #data = array(data)
+                #data = np.array(data)
                 if Nhead != len(data[0]):
-                    raise SPDataIOError("Different number of header variables from data columns")
+                    msg = "Different number of header variables "\
+                          "from data columns"
+                    raise SPDataIOError(msg)
                 output = DataDict()
                 for varname, column in zip(header, zip(*data)):
                     output.setdefault(varname, []).append(column)
                 for varname in output:
                     data = output[varname]
                     if len(data) > 1:
-                        output[varname] = array(output[varname], order="F").T
+                        output[varname] = np.array(output[varname],
+                                                   order="F").T
                     else:
-                        output[varname] = array(output[varname][0])
+                        output[varname] = np.array(output[varname][0])
 
                 freq = DimSweep(header[0], output[header[0]])
                 db[header[0]] = freq
@@ -153,16 +149,21 @@ class ReadSPFileFormat(ReadFileFormat):
                     if output[x].ndim == 1:
                         db[x] = hfarray(output[x], dims=(freq,))
                     else:
-                        db[x] = hfarray(output[x], dims=(freq, DimRep("rep", output[x].shape[1]))).squeeze()
+                        repdim = DimRep("rep", output[x].shape[1])
+                        db[x] = hfarray(output[x],
+                                        dims=(freq, repdim)).squeeze()
 
             remove = []
             for vname in db.comments.property:
                 if vname[:1] == "@":
-                    db[vname[1:]] = DimPartial(vname[1:], [float(db.comments.property[vname])], unit=db.comments.property[vname].unit)
+                    unit = db.comments.property[vname].unit
+                    data = [float(db.comments.property[vname])]
+                    db[vname[1:]] = DimPartial(vname[1:], dims=data, unit=unit)
                     remove.append(vname)
             for v in remove:
                 del db.comments.property[v]
-            db.comments.fullcomments = [com for com in db.comments.fullcomments if not com.startswith("@")]
+            db.comments.fullcomments = [com for com in db.comments.fullcomments
+                                        if not com.startswith("@")]
             yield db
 
 
@@ -178,21 +179,23 @@ def format_sp_block(sweepvars, header, fmts, columns, blockname, comments):
             #yield ["!PROPERTIES"]
         for k, v in comments.property.iteritems():
             if v.unit:
-                vfmt = "%%(name)s [%%(unit)s]: %%(value)%s"%(v.outputformat[1:],)
+                args = (v.outputformat[1:],)
+                vfmt = "%%(name)s [%%(unit)s]: %%(value)%s" % args
             else:
-                vfmt = "%%(name)s: %%(value)%s"%(v.outputformat[1:],)
-            vname = vfmt%dict(name=k, unit=v.unit, value=v)
+                vfmt = "%%(name)s: %%(value)%s" % (v.outputformat[1:], )
+            vname = vfmt % dict(name=k, unit=v.unit, value=v)
             com_added = True
-            yield ["!%s"%vname]
+            yield ["!%s" % vname]
 
         if (not sweepvars) and com_added:
             pass
             #yield ["!END-PROPERTIES"]
-        
+
     for iname, fmt, value in sweepvars:
-        yield [("!@%s="+fmt)%(iname, value)]
+        yield [("!@%s=" + fmt) % (iname, value)]
     header, columns = make_col_from_matrix(header, columns, "%s%s%s")
-    outheader = format_complex_header(header, columns, "%s", "Re(%s)", "Im(%s)")
+    outheader = format_complex_header(header, columns,
+                                      "%s", "Re(%s)", "Im(%s)")
 
     yield outheader
     fmts = [x.outputformat for x in columns]
@@ -213,21 +216,27 @@ def save_spdata(db, filename):
     for rad in db_iterator(db, format_sp_block):
         fil.write(u"\t".join(rad))
         fil.write(u"\n")
-    
+
     if isinstance(filename, (str, unicode)):
         fil.close()
 
 
 def read_spdata(filnamn, make_complex=True, property_to_vars=True,
                 guess_unit=True, normalize=True, make_matrix=True,
-                merge=True, hyper=False, verbose=True):
-    return ReadSPFileFormat.read_file(filnamn, make_complex=make_complex, 
-                property_to_vars=property_to_vars, guess_unit=guess_unit,
-                normalize=normalize, make_matrix=make_matrix, merge=merge, verbose=verbose, hyper=hyper)
+                merge=True, hyper=False, verbose=False):
+    return ReadSPFileFormat.read_file(filnamn, make_complex=make_complex,
+                                      property_to_vars=property_to_vars,
+                                      guess_unit=guess_unit,
+                                      normalize=normalize,
+                                      make_matrix=make_matrix,
+                                      merge=merge,
+                                      verbose=verbose,
+                                      hyper=hyper)
 
 
 if __name__ == "__main__":
-    data = read_spdata("tests/testdata/sp-data/sp_oneport_1_1.txt", merge=False)
+    data = read_spdata("tests/testdata/sp-data/sp_oneport_1_1.txt",
+                       merge=False)
     data2 = read_spdata("tests/testdata/sp-data/sp_twoport_1.txt")
 
 

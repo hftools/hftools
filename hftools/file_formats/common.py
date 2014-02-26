@@ -20,7 +20,7 @@ import numpy as np
 from hftools.dataset import hfarray, ismatrix, DataBlock
 from hftools.constants import convert_with_unit,\
     string_number_with_unit_to_value
-
+from hftools.utils import to_numeric
 
 _examples = """
 !START Time : 2010-10-19 16:01:26
@@ -175,6 +175,7 @@ def process_comment(comment):
             try:
 #                value = string_number_with_unit_to_value(value)
                 value = convert([string_number_with_unit_to_value,
+                                 to_numeric,
                                  conv_date_time,
                                  conv_date,
                                  conv_time], value)
