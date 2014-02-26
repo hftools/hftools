@@ -866,7 +866,11 @@ def axis_handler(a, axis):
         return None
     elif isinstance(axis, int):
         return a.dims[axis]
-    elif isinstance(axis, type) and issubclass(axis, DimBase):
+    if isinstance(axis, (str, unicode)):
+        i = a.dims_index(axis)
+        axis = a.dims[i]
+
+    if isinstance(axis, type) and issubclass(axis, DimBase):
         outaxis = []
         for dim in a.dims:
             if isinstance(dim, axis):
@@ -899,7 +903,11 @@ def multiple_axis_handler(a, axis):
         if isinstance(ax, int):
             outaxis.append(a.dims[ax])
             outidx.append(ax)
-        elif isinstance(ax, type) and issubclass(ax, DimBase):
+            continue
+        if isinstance(ax, (str, unicode)):
+            i = a.dims_index(ax)
+            ax = a.dims[i]
+        if isinstance(ax, type) and issubclass(ax, DimBase):
             for dimidx, dim in enumerate(a.dims):
                 if isinstance(dim, ax):
                     outaxis.append(dim)
