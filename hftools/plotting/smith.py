@@ -1,5 +1,11 @@
 # -*- coding: ISO-8859-1 -*-
-#hftools
+#-----------------------------------------------------------------------------
+# Copyright (c) 2014, HFTools Development Team.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+#-----------------------------------------------------------------------------
 import sys, os, pdb, itertools
 import numpy as np
 
@@ -43,7 +49,7 @@ def angle(x, deg=False, branch=0):
     if deg:
         add = 360
         offset = exp(1j * branch / 180. * pi)
-    else:       
+    else:
         add = 2*pi
         offset = exp(1j * branch)
     x = x/offset
@@ -129,7 +135,7 @@ def y2gamma(y):
             return -1-1e-15j
     else:
         return (1 - y) / (1 + y)
-    
+
 def RCircle(r, x1=None, x2=None):
     x0, y0 = (r/(r + 1.), 0)
     radius =  abs(1/(r + 1.))
@@ -150,11 +156,11 @@ def RCircle(r, x1=None, x2=None):
 def XCircle(x, r1=None, r2=None):
     if x==0:
         if r1 is None or r2 is None:
-            return MyLine(-1, 0, 1, 0)     
+            return MyLine(-1, 0, 1, 0)
         else:
             x1 = (z2gamma(r1)+0j).real
             x2 = (z2gamma(r2)+0j).real
-            return MyLine(x1, 0, x2, 0)     
+            return MyLine(x1, 0, x2, 0)
 
     x = float(x)
     x0, y0 = (1, 1/x)
@@ -172,7 +178,7 @@ def XCircle(x, r1=None, r2=None):
         t1, t2 = sorted((angle(c2-c0, deg=True), angle(c1-c0, deg=True)))
     return MyCircle(x0, y0, radius, t1, t2)
 
-    
+
 def GCircle(g, b1=None, b2=None):
     x0, y0 = (-g/(g + 1.), 0)
     radius =  abs(1/(g + 1.))
@@ -193,11 +199,11 @@ def GCircle(g, b1=None, b2=None):
 def BCircle(b, g1=None, g2=None):
     if b==0:
         if g1 is None or g2 is None:
-            return MyLine(-1, 0, 1, 0)     
+            return MyLine(-1, 0, 1, 0)
         else:
             x1 = (z2gamma(g1)+0j).real
             x2 = (z2gamma(g2)+0j).real
-            return MyLine(x1, 0, x2, 0)     
+            return MyLine(x1, 0, x2, 0)
     if b >= 0:
         branch = 90
         g1, g2 = (g2, g1)
@@ -274,7 +280,7 @@ def smith_grid(ax=None, mode="full", standard=True, **kw):
         xcircles.extend(lower)
     if mode in ["full", "upper"]:
         xcircles.extend(upper)
-    
+
     for x in xcircles:
         circ = XC(x, 0, np.inf)
         ax.add_patch(circ.get_artist(color="k"))
@@ -294,7 +300,7 @@ def inv_smith(ax=None, **kw):
     ax = empty_grid(ax)
     ax.add_patch(Circle((0, 0), 1, fc="w", ec="k"))
     smith_grid(ax, standard=False)
-    return 
+    return
 
 def smith_lower(ax=None):
     if ax is None:
@@ -316,7 +322,7 @@ def smith_upper(ax=None):
     ax.axis("equal")
     ax.axis([-1.01,1.01,-1.01,1.01])
     smith_grid(ax, "upper")
-        
+
 
 def smith_polar(ax=None):
     if ax is None:
