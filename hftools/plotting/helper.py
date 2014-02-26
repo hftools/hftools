@@ -254,7 +254,7 @@ class HFToolsAxes(Axes):
         if x.ndim == 1 and y.ndim == 1:
             return Axes.plot(self, x, y, *args, **kwargs)
         else:
-            return Axes.plot(self, x, remove_tail(y), *args, **kwargs)
+            return Axes.plot(self, remove_tail(x), remove_tail(y), *args, **kwargs)
 
             Ns = y.shape[1:4]
             kw = kwargs.copy()
