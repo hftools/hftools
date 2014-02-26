@@ -16,7 +16,7 @@ import hftools.dataset.dataset as dset
 import hftools.dataset as ds
 
 from hftools.testing import random_value_array, random_complex_value_array,\
-    random_value_array_from_info
+    random_value_array_from_dims
 from hftools.dataset import hfarray, DimSweep, DimRep, DimMatrix_i,\
     DimMatrix_j, change_dim, DiagAxis
 from hftools.testing import TestCase, make_load_tests
@@ -33,10 +33,10 @@ class Test_changedim(TestCase):
     def setUp(self):
         self.d = DataBlock()
         self.d.P = VA([0.5, -.3, .5])
-        Sinfo = (DimMatrix_i("i", 2), DimMatrix_j("j", 2))
-        self.d.S = VA([[11, 12], [21, 22]], dims=Sinfo)
-        Winfo = (DimSweep("g", 1), DimMatrix_i("i", 2), DimMatrix_j("j", 2))
-        self.d.W = VA([[[11, 12], [21, 22]]], dims=Winfo)
+        Sdims = (DimMatrix_i("i", 2), DimMatrix_j("j", 2))
+        self.d.S = VA([[11, 12], [21, 22]], dims=Sdims)
+        Wdims = (DimSweep("g", 1), DimMatrix_i("i", 2), DimMatrix_j("j", 2))
+        self.d.W = VA([[[11, 12], [21, 22]]], dims=Wdims)
 
     def test_1(self):
         change_dim(self.d, DimRep, DiagAxis)

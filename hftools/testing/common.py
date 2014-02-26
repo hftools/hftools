@@ -18,7 +18,7 @@ from numpy.random import randint, normal
 
 from hftools.dataset import hfarray, DimSweep, DimRep, DimMatrix_i,\
     DimMatrix_j
-from hftools.utils import HFToolsWarning
+from hftools.utils import HFToolsWarning, HFToolsDeprecationWarning
 
 
 class TestCase(unittest.TestCase):
@@ -57,6 +57,7 @@ def make_load_tests(module):
         load_tests = make_load_tests(module)
     """
     warnings.simplefilter("error", HFToolsWarning)
+    warnings.simplefilter("error", HFToolsDeprecationWarning)
 
     def load_tests(loader, standard_tests, pattern):
         suite = unittest.TestSuite()
@@ -75,51 +76,51 @@ def _random_array(shape):
 
 
 def random_array(N, maxsize=6, minsize=1):
-    shape = tuple(x.data.shape[0] for x in random_info(N, maxsize, minsize))
+    shape = tuple(x.data.shape[0] for x in random_dims(N, maxsize, minsize))
     return _random_array(shape)
 
 
 def random_complex_array(N, maxsize=6, minsize=1):
-    shape = tuple(x.data.shape[0] for x in random_info(N, maxsize, minsize))
+    shape = tuple(x.data.shape[0] for x in random_dims(N, maxsize, minsize))
     return _random_array(shape) + _random_array(shape) * 1j
 
 
-def random_value_array_from_info(info, mean=0, scale=1):
-    shape = tuple(dim.data.shape[0] for dim in info)
-    return hfarray(normal(size=shape) * scale + mean, info)
+def random_value_array_from_dims(dims, mean=0, scale=1):
+    shape = tuple(dim.data.shape[0] for dim in dims)
+    return hfarray(normal(size=shape) * scale + mean, dims)
 
 ##
 ## Random hfarrays
 
 
 def random_value_array(N, maxsize, minsize=1):
-    info = random_info(N, maxsize, minsize)
-    return random_value_array_from_info(info)
+    dims = random_dims(N, maxsize, minsize)
+    return random_value_array_from_dims(dims)
 
 
 def random_complex_value_array(N, maxsize, minsize=1):
-    info = random_info(N, maxsize, minsize)
-    return (random_value_array_from_info(info) +
-            random_value_array_from_info(info) * 1j)
+    dims = random_dims(N, maxsize, minsize)
+    return (random_value_array_from_dims(dims) +
+            random_value_array_from_dims(dims) * 1j)
 
 
-def random_info(N, maxsize, minsize=1):
+def random_dims(N, maxsize, minsize=1):
     shape = tuple(randint(minsize, maxsize, size=N))
     label = get_label()
     basedims = [DimSweep, DimRep]
     choice = random.choice
-    info = tuple(choice(basedims)(label + str(idx), x)
+    dims = tuple(choice(basedims)(label + str(idx), x)
                  for idx, x in enumerate(shape))
-    return info
+    return dims
 
 
 def random_complex_matrix(N, maxsize, minsize=1, Nmatrix=2, Nmatrixj=None):
     if Nmatrixj is None:  # pragma: no cover
         Nmatrixj = Nmatrix
-    info = (random_info(N, maxsize, minsize) +
+    dims = (random_dims(N, maxsize, minsize) +
             (DimMatrix_i("i", Nmatrix), DimMatrix_j("j", Nmatrixj)))
-    return (random_value_array_from_info(info) +
-            random_value_array_from_info(info) * 1j)
+    return (random_value_array_from_dims(dims) +
+            random_value_array_from_dims(dims) * 1j)
 
 
 @skip("Skipping")

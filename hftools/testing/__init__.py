@@ -8,5 +8,5 @@
 #-----------------------------------------------------------------------------
 from hftools.testing.common import random_array, random_value_array,\
     random_complex_array, random_complex_value_array, TestCase, \
-    make_load_tests, skip, random_value_array_from_info, SKIP,\
+    make_load_tests, skip, random_value_array_from_dims, SKIP,\
     random_complex_matrix

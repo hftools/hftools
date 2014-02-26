@@ -15,7 +15,7 @@ import hftools.dataset.dim
 import hftools.dataset.dim as ddim
 
 from hftools.dataset.dim import DimSweep, ComplexDiagAxis, ComplexIndepAxis,\
-    ComplexDerivAxis, info_has_complex
+    ComplexDerivAxis, dims_has_complex
 from hftools.testing import TestCase, make_load_tests
 from hftools.dataset import hfarray
 
@@ -212,12 +212,12 @@ class TestDiag_Matrix_j(Test_Dim):
     deriv = ddim.DimMatrix_Deriv_j
 
 
-class Test_info_has_complex(TestCase):
+class Test_dims_has_complex(TestCase):
     def _helper(self, dims):
-        self.assertTrue(info_has_complex(dims))
+        self.assertTrue(dims_has_complex(dims))
 
     def _helper_false(self, dims):
-        self.assertFalse(info_has_complex(dims))
+        self.assertFalse(dims_has_complex(dims))
 
     def test_1(self):
         self._helper_false((DimSweep("d", 3),))

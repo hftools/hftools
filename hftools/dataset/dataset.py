@@ -72,8 +72,8 @@ def convert_matrices_to_elements(db, formatelement=None):
 
     for k, v in db.vardata.items():
         if ismatrix(v):
-            for i, _ in enumerate(v.dims[v.info_index("i")].data, 1):
-                for j, _ in enumerate(v.dims[v.info_index("j")].data, 1):
+            for i, _ in enumerate(v.dims[v.dims_index("i")].data, 1):
+                for j, _ in enumerate(v.dims[v.dims_index("j")].data, 1):
                     out[formatelement(k, i, j)] = v[..., i - 1, j - 1]
         else:
             out[k] = v
@@ -419,7 +419,7 @@ class DataBlock(object):
         for v in self.vardata.keys():
             data = self.vardata[v].view()
             try:
-                i = data.info_index(boolarray.dims[0])
+                i = data.dims_index(boolarray.dims[0])
             except IndexError:  # This variable does not sweep in boolarray dim
                 out[v] = data
                 continue
@@ -465,7 +465,7 @@ class DataBlock(object):
         for v in self.vardata.keys()[:]:
             data = self.vardata[v].view()
             try:
-                i = data.info_index(dimname)
+                i = data.dims_index(dimname)
                 out[v] = data.take(sortorder, i)
             except IndexError:  # This variable does not contain sort direction
                 out[v] = data
@@ -614,7 +614,7 @@ class DataBlock(object):
             if k in out.ivardata:
                 continue
             v = hfarray(v, copy=False, order="C")
-            i = v.info_index(replacedim)
+            i = v.dims_index(replacedim)
             new_shape = v.shape[:i] + dims_shape + v.shape[i + 1:]
             v.shape = new_shape
             v.dims = v.dims[:i] + dims + v.dims[i + 1:]

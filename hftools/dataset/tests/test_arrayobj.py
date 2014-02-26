@@ -22,24 +22,24 @@ basepath = os.path.split(__file__)[0]
 load_tests = make_load_tests(aobj)
 
 
-class TestInfo(TestCase):
+class TestDims(TestCase):
     def test_contains1(self):
         dims = (dim.DimSweep("a", 3), dim.DimSweep("b", 3),
                 dim.DimSweep("c", 3))
-        dims = aobj.Info(dims)
+        dims = aobj.Dims(dims)
         for d in dims:
             self.assertTrue(d in dims)
 #        self.assertFalse("a" in dims)
 
     def test_get_matching_dim1(self):
-        dims = aobj.Info((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
+        dims = aobj.Dims((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
                           dim.DimSweep("c", 3)))
         self.assertEqual(dims.get_matching_dim(dim.DimSweep("a", 4)), dims[0])
         self.assertEqual(dims.get_matching_dim(dim.DimSweep("b", 2)), dims[1])
         self.assertEqual(dims.get_matching_dim(dim.DimSweep("c", 4)), dims[2])
 
     def test_get_matching_dim_error1(self):
-        dims = aobj.Info((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
+        dims = aobj.Dims((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
                           dim.DimSweep("c", 3)))
         self.assertRaises(KeyError, dims.get_matching_dim, dim.DimRep("c", 4))
         self.assertRaises(KeyError, dims.get_matching_dim,
@@ -47,44 +47,44 @@ class TestInfo(TestCase):
         self.assertRaises(KeyError, dims.get_matching_dim, "a")
 
     def test_matching_index1(self):
-        dims = aobj.Info((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
+        dims = aobj.Dims((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
                           dim.DimSweep("c", 3)))
         self.assertEqual(dims.matching_index(dim.DimSweep("a", 4)), 0)
         self.assertEqual(dims.matching_index(dim.DimSweep("b", 2)), 1)
         self.assertEqual(dims.matching_index(dim.DimSweep("c", 4)), 2)
 
     def test_matching_index_error1(self):
-        dims = aobj.Info((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
+        dims = aobj.Dims((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
                           dim.DimSweep("c", 3)))
         self.assertRaises(KeyError, dims.matching_index, dim.DimRep("c", 4))
         self.assertRaises(KeyError, dims.matching_index, dim.DimSweep("d", 4))
         self.assertRaises(KeyError, dims.matching_index, "a")
 
     def test_containing_1(self):
-        dims = aobj.Info((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
+        dims = aobj.Dims((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
                           dim.DimSweep("c", 3)))
         self.assertTrue("c" in dims)
         self.assertFalse("d" in dims)
 
 
-class TestInfoList(TestCase):
+class TestDimsList(TestCase):
     def test_contains1(self):
         dims = (dim.DimSweep("a", 3), dim.DimSweep("b", 3),
                 dim.DimSweep("c", 3))
-        dims = aobj.InfoList(dims)
+        dims = aobj.DimsList(dims)
         for d in dims:
             self.assertTrue(d in dims)
         self.assertFalse("a" in dims)
 
     def test_get_matching_dim1(self):
-        dims = aobj.InfoList((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
+        dims = aobj.DimsList((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
                               dim.DimSweep("c", 3)))
         self.assertEqual(dims.get_matching_dim(dim.DimSweep("a", 4)), dims[0])
         self.assertEqual(dims.get_matching_dim(dim.DimSweep("b", 2)), dims[1])
         self.assertEqual(dims.get_matching_dim(dim.DimSweep("c", 4)), dims[2])
 
     def test_get_matching_dim_error1(self):
-        dims = aobj.InfoList((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
+        dims = aobj.DimsList((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
                               dim.DimSweep("c", 3)))
         self.assertRaises(KeyError, dims.get_matching_dim, dim.DimRep("c", 4))
         self.assertRaises(KeyError, dims.get_matching_dim,
@@ -92,14 +92,14 @@ class TestInfoList(TestCase):
         self.assertRaises(KeyError, dims.get_matching_dim, "a")
 
     def test_matching_index1(self):
-        dims = aobj.InfoList((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
+        dims = aobj.DimsList((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
                               dim.DimSweep("c", 3)))
         self.assertEqual(dims.matching_index(dim.DimSweep("a", 4)), 0)
         self.assertEqual(dims.matching_index(dim.DimSweep("b", 2)), 1)
         self.assertEqual(dims.matching_index(dim.DimSweep("c", 4)), 2)
 
     def test_matching_index_error1(self):
-        dims = aobj.InfoList((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
+        dims = aobj.DimsList((dim.DimSweep("a", 3), dim.DimSweep("b", 3),
                               dim.DimSweep("c", 3)))
         self.assertRaises(KeyError, dims.matching_index, dim.DimRep("c", 4))
         self.assertRaises(KeyError, dims.matching_index, dim.DimSweep("d", 4))
@@ -131,11 +131,11 @@ class Test_as_strided(TestCase):
 class Test_expand_diagonals(TestCase):
     def setUp(self):
         self.a = aobj.hfarray([1, 2, 3], dims=(ds.DiagAxis("f", 3),))
-        binfo = (ds.DiagAxis("f", 3), ds.DiagAxis("p", 3),)
+        bdims = (ds.DiagAxis("f", 3), ds.DiagAxis("p", 3),)
         self.b = aobj.hfarray([[1, 2, 3],
                                [10, 20, 30],
                                [100, 200, 300]],
-                              dims=binfo)
+                              dims=bdims)
 
     def test_1(self):
         w = aobj.expand_diagonals(self.a)
@@ -191,7 +191,7 @@ class Test_expand_diagonals(TestCase):
                           self.a, (ds.DiagAxis("p", 3),))
 
 
-class Test_make_same_info(TestCase):
+class Test_make_same_dims(TestCase):
     def setUp(self):
         self.a = aobj.hfarray([1, 2, 3], dims=(ds.DiagAxis("f", 3),))
         dims = (ds.DiagAxis("f", 3), ds.DiagAxis("p", 3),)
@@ -200,21 +200,21 @@ class Test_make_same_info(TestCase):
                                [100, 200, 300]], dims=dims)
 
     def test_1(self):
-        a, b = aobj.make_same_info(self.a, self.a)
+        a, b = aobj.make_same_dims(self.a, self.a)
         self.assertEqual(a.dims, b.dims)
 
     def test_2(self):
-        a, b = aobj.make_same_info(self.a, self.b)
+        a, b = aobj.make_same_dims(self.a, self.b)
         self.assertEqual(a.dims, b.dims)
         self.assertEqual(a.dims, (ds.DiagAxis("f", 3), ds.DiagAxis("p", 3),))
 
     def test_3(self):
-        b, a = aobj.make_same_info(self.b, self.a)
+        b, a = aobj.make_same_dims(self.b, self.a)
         self.assertEqual(a.dims, b.dims)
         self.assertEqual(a.dims, (ds.DiagAxis("f", 3), ds.DiagAxis("p", 3),))
 
     def test_4(self):
-        a, b = aobj.make_same_info(self.a, np.array(self.a))
+        a, b = aobj.make_same_dims(self.a, np.array(self.a))
         self.assertEqual(a.dims, b.dims)
         self.assertEqual(a.dims, (ds.DiagAxis("f", 3), ))
 
@@ -400,7 +400,7 @@ class MakeData(object):
                               np.arange(10)[:, newaxis, newaxis],
                               dims=self.bdims)
 
-        self.c, = aobj.make_same_info_list([random_value_array(4, 5)])
+        self.c, = aobj.make_same_dims_list([random_value_array(4, 5)])
         self.cdims = self.c.dims
         self.ddims = self.bdims
         self.d = aobj.hfarray(np.array([[[1, 2], [3, 4]]]) +
@@ -529,36 +529,36 @@ class Test_hfarray_1(_Test_hfarray):
 
     def test_verify_dimension_error_1(self):
         self.a.dims = self.a.dims[:-1]
-        self.assertRaises(aobj.HFArrayShapeInfoMismatchError,
+        self.assertRaises(aobj.HFArrayShapeDimsMismatchError,
                           self.a.verify_dimension)
 
-    def test_info_index_1(self):
-        self.assertEqual(self.a.info_index("f"), 0)
-        self.assertEqual(self.a.info_index("i"), 1)
-        self.assertEqual(self.a.info_index("j"), 2)
-        self.assertEqual(self.a.info_index("f", aobj.DimSweep), 0)
-        self.assertEqual(self.a.info_index("i", aobj.DimMatrix_i), 1)
-        self.assertEqual(self.a.info_index("j", aobj.DimMatrix_j), 2)
+    def test_dims_index_1(self):
+        self.assertEqual(self.a.dims_index("f"), 0)
+        self.assertEqual(self.a.dims_index("i"), 1)
+        self.assertEqual(self.a.dims_index("j"), 2)
+        self.assertEqual(self.a.dims_index("f", aobj.DimSweep), 0)
+        self.assertEqual(self.a.dims_index("i", aobj.DimMatrix_i), 1)
+        self.assertEqual(self.a.dims_index("j", aobj.DimMatrix_j), 2)
 
-    def test_info_index_2(self):
-        self.assertEqual(self.b.info_index("f"), 0)
-        self.assertEqual(self.b.info_index("i"), 1)
-        self.assertEqual(self.b.info_index("j"), 2)
-        self.assertEqual(self.a.info_index("f", aobj.DimSweep), 0)
-        self.assertEqual(self.a.info_index("i", aobj.DimMatrix_i), 1)
-        self.assertEqual(self.a.info_index("j", aobj.DimMatrix_j), 2)
+    def test_dims_index_2(self):
+        self.assertEqual(self.b.dims_index("f"), 0)
+        self.assertEqual(self.b.dims_index("i"), 1)
+        self.assertEqual(self.b.dims_index("j"), 2)
+        self.assertEqual(self.a.dims_index("f", aobj.DimSweep), 0)
+        self.assertEqual(self.a.dims_index("i", aobj.DimMatrix_i), 1)
+        self.assertEqual(self.a.dims_index("j", aobj.DimMatrix_j), 2)
 
-    def test_info_index_error_1(self):
-        self.assertRaises(IndexError, self.a.info_index, "Q")
-        self.assertRaises(IndexError, self.a.info_index, "f", aobj.DimMatrix_i)
-        self.assertRaises(IndexError, self.a.info_index, "i", aobj.DimSweep)
-        self.assertRaises(IndexError, self.a.info_index, "j", aobj.DimSweep)
+    def test_dims_index_error_1(self):
+        self.assertRaises(IndexError, self.a.dims_index, "Q")
+        self.assertRaises(IndexError, self.a.dims_index, "f", aobj.DimMatrix_i)
+        self.assertRaises(IndexError, self.a.dims_index, "i", aobj.DimSweep)
+        self.assertRaises(IndexError, self.a.dims_index, "j", aobj.DimSweep)
 
-    def test_info_index_error_2(self):
-        self.assertRaises(IndexError, self.b.info_index, "X")
-        self.assertRaises(IndexError, self.b.info_index, "f", aobj.DimMatrix_i)
-        self.assertRaises(IndexError, self.b.info_index, "i", aobj.DimSweep)
-        self.assertRaises(IndexError, self.b.info_index, "j", aobj.DimSweep)
+    def test_dims_index_error_2(self):
+        self.assertRaises(IndexError, self.b.dims_index, "X")
+        self.assertRaises(IndexError, self.b.dims_index, "f", aobj.DimMatrix_i)
+        self.assertRaises(IndexError, self.b.dims_index, "i", aobj.DimSweep)
+        self.assertRaises(IndexError, self.b.dims_index, "j", aobj.DimSweep)
 
     def test_help_1(self):
         self.a.help()
@@ -606,21 +606,21 @@ class Test_hfarray_getitem(_Test_hfarray):
 
 class Test_rss_method(_Test_hfarray):
     def test_1(self):
-        v, = aobj.make_same_info_list([random_value_array(4, 5)])
+        v, = aobj.make_same_dims_list([random_value_array(4, 5)])
         a = np.array(v)
         facit = np.sqrt((abs(a) ** 2).sum())
         res = v.rss()
         self.assertAllclose(res, facit)
 
     def test_2(self):
-        v, = aobj.make_same_info_list([random_value_array(4, 5)])
+        v, = aobj.make_same_dims_list([random_value_array(4, 5)])
         a = np.array(v)
         facit = np.sqrt((abs(a) ** 2).sum(0))
         res = v.rss(0)
         self.assertAllclose(res, facit)
 
     def test_3(self):
-        v, = aobj.make_same_info_list([random_value_array(4, 5)])
+        v, = aobj.make_same_dims_list([random_value_array(4, 5)])
         a = np.array(v)
         facit = np.sqrt((abs(a) ** 2).sum(1))
         res = v.rss(1)
@@ -702,11 +702,11 @@ class Test_mean(Test_cumsum):
         self.assertTrue(np.allclose(r1, r2))
         self.assertIsInstance(r1, v.__class__)
 
-    def test_axis_specified_not_in_info(self):
+    def test_axis_specified_not_in_dims(self):
         self.assertRaises(IndexError, getattr(self.a, self.methodname),
                           aobj.DimRep("rep", 4))
 
-    def test_axis_specified_not_in_info_2(self):
+    def test_axis_specified_not_in_dims_2(self):
         res = self.a.mean(axis=aobj.DimRep("rep", 4), dimerror=False)
         self.assertAllclose(res, self.a)
 
@@ -781,12 +781,12 @@ class Test_make_matrix(TestCase):
 
     def test_2(self):
         a = random_value_array(3, 5)
-        self.assertRaises(aobj.HFArrayShapeInfoMismatchError,
+        self.assertRaises(aobj.HFArrayShapeDimsMismatchError,
                           aobj.make_matrix, np.array(a), a.dims[:2])
 
     def test_3(self):
         a = random_value_array(3, 5)
-        self.assertRaises(aobj.HFArrayShapeInfoMismatchError,
+        self.assertRaises(aobj.HFArrayShapeDimsMismatchError,
                           aobj.make_matrix, np.array(a), a.dims[:3])
 
 
@@ -799,17 +799,17 @@ class Test_make_vector(TestCase):
 
     def test_2(self):
         a = random_value_array(3, 5)
-        self.assertRaises(aobj.HFArrayShapeInfoMismatchError,
+        self.assertRaises(aobj.HFArrayShapeDimsMismatchError,
                           aobj.make_vector, np.array(a), a.dims[:])
 
     def test_3(self):
         a = random_value_array(3, 5)
-        self.assertRaises(aobj.HFArrayShapeInfoMismatchError,
+        self.assertRaises(aobj.HFArrayShapeDimsMismatchError,
                           aobj.make_vector, np.array(a), a.dims[:1])
 
     def test_4(self):
         a = random_value_array(3, 5)
-        self.assertRaises(aobj.HFArrayShapeInfoMismatchError,
+        self.assertRaises(aobj.HFArrayShapeDimsMismatchError,
                           aobj.make_vector, np.array(a), a.dims[:0])
 
 

@@ -15,7 +15,7 @@ class DimensionMismatchError(ValueError):
     pass
 
 
-class HFArrayShapeInfoMismatchError(ValueError):
+class HFArrayShapeDimsMismatchError(ValueError):
     pass
 
 

@@ -8,7 +8,7 @@
 #-----------------------------------------------------------------------------
 from hftools._external import path
 from hftools.core import HFToolsIOError, DimensionMismatchError,\
-    HFArrayShapeInfoMismatchError, HFArrayError
+    HFArrayShapeDimsMismatchError, HFArrayError
 from hftools.dataset import hfarray, ValueArray, DataBlock, DimSweep, DimRep,\
     DimMatrix_i, DimMatrix_j, DimPartial, ismatrix, make_matrix,\
-    make_same_info, change_dim, DataBlockError
+    make_same_dims, change_dim, DataBlockError

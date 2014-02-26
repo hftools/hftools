@@ -60,7 +60,7 @@ def build_measmnt(data):
         else:
             out[k[0]] = hfarray("")
         if out[k[0]].dtype.name.startswith("unicode"):
-            out[k[0]] = hfarray(np.char.encode(out[k[0]], "cp1252", errors="replace"), dims=out[k[0]].info)
+            out[k[0]] = hfarray(np.char.encode(out[k[0]], "cp1252", errors="replace"), dims=out[k[0]].dims)
     return out
 
 
@@ -77,7 +77,7 @@ def build_meas_state(data):
             else:
                 d[k[0]] = hfarray(make_real(v[0]))
         if d[k[0]].dtype.name.startswith("unicode"):
-            d[k[0]] = hfarray(np.char.encode(d[k[0]], "cp1252", errors="replace"), dims=d[k[0]].info)
+            d[k[0]] = hfarray(np.char.encode(d[k[0]], "cp1252", errors="replace"), dims=d[k[0]].dims)
     return d
 
 
@@ -89,7 +89,7 @@ def make_real(data):
 
 def reorder(m):
     grouped = {}
-    for dim in m.info:
+    for dim in m.dims:
         grouped.setdefault(dim.sortprio, []).append(dim)
     out = []
     for prio in sorted(grouped):
@@ -164,7 +164,7 @@ def read_muwave_matlabdata(filename, drop_empty=True, **kw):
     else:
         d = read_single_muwave_matlabdata(filenames[0], drop_empty=drop_empty)
 
-    order = [d.ivardata[dim] for dim in ["freq", "Index", "Index2"] if dim in d.S.info]
+    order = [d.ivardata[dim] for dim in ["freq", "Index", "Index2"] if dim in d.S.dims]
 
     d.S = d.S.reorder_dimensions(*order)
     if drop_empty:

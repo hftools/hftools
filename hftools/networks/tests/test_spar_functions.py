@@ -21,10 +21,10 @@ basepath = os.path.split(__file__)[0]
 
 
 def make_array(a):
-    info = (aobj.DimSweep("f", len(a)),
+    dims = (aobj.DimSweep("f", len(a)),
             aobj.DimMatrix_i("i", 2),
             aobj.DimMatrix_j("j", 2))
-    return aobj.hfarray(a, dims=info)
+    return aobj.hfarray(a, dims=dims)
 
 
 class Test_cascade(TestCase):

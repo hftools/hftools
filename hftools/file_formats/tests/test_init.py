@@ -56,11 +56,11 @@ class TestInitCiti_1(base_test.Test_1):
 
 # There is no idea to make tests based on Test_2 and Test_3 as they are dB/arg, mag/arg
 
-        
+
 if __name__ == '__main__':
     d = DataBlock()
     d.comments = Comments(["Hej=10", "Svejs=11"])
-    info=(DimSweep("f", 3, outputformat="%.1f"), DimSweep("i", 2, outputformat="%.0f"), DimSweep("j", 2, outputformat="%.0f"),)
-    d.c = hfarray([[[1, 2],[3, 4]], [[10, 20],[30, 40]], [[10, 20],[30, 40]]], dims=info, outputformat="%.2f")
+    dims=(DimSweep("f", 3, outputformat="%.1f"), DimSweep("i", 2, outputformat="%.0f"), DimSweep("j", 2, outputformat="%.0f"),)
+    d.c = hfarray([[[1, 2],[3, 4]], [[10, 20],[30, 40]], [[10, 20],[30, 40]]], dims=dims, outputformat="%.2f")
     hftools.file_formats.spdata.save_spdata(d, testpath/"testdata/sp-data/savetest/res_3.txt")
     d2 = hftools.file_formats.read_spdata(testpath/"testdata/sp-data/a.txt")

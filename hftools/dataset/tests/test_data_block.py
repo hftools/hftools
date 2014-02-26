@@ -19,8 +19,8 @@ from hftools.dataset import hfarray, DimSweep, DimRep, DimMatrix_i,\
     DimMatrix_j, DataBlockError, DataDict, DataBlock
 from hftools.dataset.comments import Comments
 from hftools.testing import random_value_array, random_complex_value_array,\
-    random_value_array_from_info, random_value_array, make_load_tests,\
-    random_complex_value_array, random_value_array_from_info, TestCase
+    random_value_array_from_dims, random_value_array, make_load_tests,\
+    random_complex_value_array, random_value_array_from_dims, TestCase
 from hftools.utils import reset_hftools_warnings, HFToolsWarning
 
 basepath = os.path.split(__file__)[0]
@@ -59,10 +59,10 @@ class Test_DataBlock2(Test_DataBlock):
     def setUp(self):
         Test_DataBlock.setUp(self)
         self.a.P = hfarray([0.5, -.3, .5])
-        Sinfo = (DimMatrix_i("i", 2), DimMatrix_j("j", 2))
-        self.a.S = hfarray([[11, 12], [21, 22]], dims=Sinfo)
-        Winfo = (DimSweep("g", 1), DimMatrix_i("i", 2), DimMatrix_j("j", 2))
-        self.a.W = hfarray([[[11, 12], [21, 22]]], dims=Winfo)
+        Sdims = (DimMatrix_i("i", 2), DimMatrix_j("j", 2))
+        self.a.S = hfarray([[11, 12], [21, 22]], dims=Sdims)
+        Wdims = (DimSweep("g", 1), DimMatrix_i("i", 2), DimMatrix_j("j", 2))
+        self.a.W = hfarray([[[11, 12], [21, 22]]], dims=Wdims)
         self.a.T = hfarray(["Text"], dims=(DimSweep("text_i", ["index0"]),))
 
     def test_1(self):
@@ -148,11 +148,11 @@ class Test_DataBlock_rename(TestCase):
         fi = DimSweep("Freq[Hz]", 3)
         gi = DimSweep("P[W]", 2)
         dims = (fi,)
-        info2 = (fi, gi)
-        info3 = (gi,)
+        dims2 = (fi, gi)
+        dims3 = (gi,)
         d.P = hfarray([1, 2, 3], dims=dims)
-        d.Q = hfarray([3, 2], dims=info3)
-        d.L = hfarray([[10, 20, 30], [11, 21, 31]], dims=info2)
+        d.Q = hfarray([3, 2], dims=dims3)
+        d.L = hfarray([[10, 20, 30], [11, 21, 31]], dims=dims2)
         self.assertEqual(d.allvarnames, ["Freq[Hz]", "P[W]", "P", "Q", "L"])
         d.rename("P", "H")
         self.assertEqual(d.allvarnames, ["Freq[Hz]", "P[W]", "H", "Q", "L"])
@@ -168,10 +168,10 @@ class Test_allvarnames(TestCase):
         fi = DimSweep("Freq[Hz]", 3)
         gi = DimSweep("P[W]", 3)
         dims = (fi,)
-        info2 = (fi, gi)
-        info3 = (gi,)
+        dims2 = (fi, gi)
+        dims3 = (gi,)
         d["P[W]"] = hfarray([10, 20, 30], dims=dims)
-        d["f"] = hfarray([[1, 2, 3]] * 3, dims=info2)
+        d["f"] = hfarray([[1, 2, 3]] * 3, dims=dims2)
         self.assertEqual(d.allvarnames, ["Freq[Hz]", "P[W]", "f"])
         self.assertAllclose(d["P[W]"], [0, 1, 2])
 
@@ -180,9 +180,9 @@ class Test_allvarnames(TestCase):
         fi = DimSweep("Freq[Hz]", 3)
         gi = DimSweep("P[W]", 3)
         dims = (fi,)
-        info2 = (fi, gi)
-        info3 = (gi,)
-        d["f"] = hfarray([[1, 2, 3]] * 3, dims=info2)
+        dims2 = (fi, gi)
+        dims3 = (gi,)
+        d["f"] = hfarray([[1, 2, 3]] * 3, dims=dims2)
         d["P[W]"] = hfarray([10, 20, 30], dims=dims)
         self.assertEqual(d.allvarnames, ["Freq[Hz]", "P[W]", "f"])
         self.assertAllclose(d["P[W]"], [10, 20, 30])
@@ -194,8 +194,8 @@ class Test_outputformat(TestCase):
         fi = DimSweep("Freq[Hz]", 3)
         gi = DimSweep("P[W]", 3)
         dims = (fi,)
-        info2 = (fi, gi)
-        d["f"] = hfarray([[1, 2, 3]] * 3, dims=info2, outputformat="%.5f")
+        dims2 = (fi, gi)
+        d["f"] = hfarray([[1, 2, 3]] * 3, dims=dims2, outputformat="%.5f")
         d["P"] = hfarray([10, 20, 30], dims=dims, outputformat="%.7f")
         self.assertEqual(d["f"].outputformat, "%.5f")
         self.assertEqual(d["P"].outputformat, "%.7f")
@@ -605,11 +605,11 @@ class Test_subset_datablock_by_dims(TestCase):
 
     def test_1(self):
         db = DataBlock()
-        Sinfo = (DimRep("freq", [1, 2]) ,DimRep("r", [1]), DimMatrix_i("i", 2), DimMatrix_j("j", 2))
-        db.S = hfarray(np.array([[11, 12], [21, 22]])[np.newaxis, np.newaxis, :, :] * np.array([[10], [20]])[..., np.newaxis, np.newaxis], dims=Sinfo)
-        db.V = hfarray([1.23], Sinfo[1:2])
+        Sdims = (DimRep("freq", [1, 2]) ,DimRep("r", [1]), DimMatrix_i("i", 2), DimMatrix_j("j", 2))
+        db.S = hfarray(np.array([[11, 12], [21, 22]])[np.newaxis, np.newaxis, :, :] * np.array([[10], [20]])[..., np.newaxis, np.newaxis], dims=Sdims)
+        db.V = hfarray([1.23], Sdims[1:2])
         db.Y = hfarray([1.23], (DimRep("k", [1]),))
-        out = dset.subset_datablock_by_dims(dset.convert_matrices_to_elements(db), Sinfo[:-2])
+        out = dset.subset_datablock_by_dims(dset.convert_matrices_to_elements(db), Sdims[:-2])
         self.assertTrue("V" in out)
         self.assertTrue("S11" in out)
         self.assertTrue("S12" in out)
@@ -617,12 +617,15 @@ class Test_subset_datablock_by_dims(TestCase):
         self.assertTrue("S22" in out)
         self.assertFalse("Y" in out)
 
+
 class Test_convert_matrices_to_elements(TestCase):
     def setUp(self):
         self.db = db = DataBlock()
-        Sinfo = (DimRep("freq", [1, 2]) ,DimRep("r", [1]), DimMatrix_i("i", 2), DimMatrix_j("j", 2))
-        db.S = hfarray(np.array([[11, 12], [21, 22]])[np.newaxis, np.newaxis, :, :] * np.array([[10], [20]])[..., np.newaxis, np.newaxis], dims=Sinfo)
-        db.V = hfarray([1.23], Sinfo[1:2])
+        Sdims = (DimRep("freq", [1, 2]), DimRep("r", [1]),
+                 DimMatrix_i("i", 2), DimMatrix_j("j", 2))
+        db.S = hfarray(np.array([[11, 12], [21, 22]])[None, None, :, :] *
+                       np.array([[10], [20]])[..., None, None], dims=Sdims)
+        db.V = hfarray([1.23], Sdims[1:2])
         db.Y = hfarray([1.23], (DimRep("k", [1]),))
 
     def test_1(self):
@@ -636,7 +639,7 @@ class Test_convert_matrices_to_elements(TestCase):
 
     def test_2(self):
         def formatelement(varname, i, j):
-            return "%s%s%s"%(varname, i ,j)
+            return "%s%s%s" % (varname, i, j)
         out = dset.convert_matrices_to_elements(self.db, formatelement)
         self.assertTrue("V" in out)
         self.assertTrue("S11" in out)
@@ -645,12 +648,13 @@ class Test_convert_matrices_to_elements(TestCase):
         self.assertTrue("S22" in out)
         self.assertTrue("Y" in out)
 
+
 class Test_yield_dim_consistent_datablocks(TestCase):
     def setUp(self):
         self.db = db = DataBlock()
-        Sinfo = (DimRep("freq", [1, 2]) ,DimRep("r", [1]), DimMatrix_i("i", 2), DimMatrix_j("j", 2))
-        db.S = hfarray(np.array([[11, 12], [21, 22]])[np.newaxis, np.newaxis, :, :] * np.array([[10], [20]])[..., np.newaxis, np.newaxis], dims=Sinfo)
-        db.V = hfarray([1.23], Sinfo[1:2])
+        Sdims = (DimRep("freq", [1, 2]) ,DimRep("r", [1]), DimMatrix_i("i", 2), DimMatrix_j("j", 2))
+        db.S = hfarray(np.array([[11, 12], [21, 22]])[np.newaxis, np.newaxis, :, :] * np.array([[10], [20]])[..., np.newaxis, np.newaxis], dims=Sdims)
+        db.V = hfarray([1.23], Sdims[1:2])
         db.Y = hfarray([1.23], (DimRep("k", [1]),))
 
     def test1(self):

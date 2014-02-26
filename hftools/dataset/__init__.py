@@ -8,12 +8,12 @@
 #-----------------------------------------------------------------------------
 from hftools.dataset.dim import DimSweep, DimRep,\
     DimMatrix_i, DimMatrix_j, _DimMatrix, DerivAxis, IndepAxis, DiagAxis, \
-    ComplexDerivAxis, ComplexIndepAxis, ComplexDiagAxis, info_has_complex,\
+    ComplexDerivAxis, ComplexIndepAxis, ComplexDiagAxis, dims_has_complex,\
     CPLX, DimPartial, DimBase
 
 from hftools.dataset.arrayobj import make_matrix, hfarray, ismatrix,\
-    make_same_info, make_same_info_list, change_shape, remove_tail,\
-    remove_rep, isfullcomplex, make_fullcomplex_array, InfoList, make_vector,\
+    make_same_dims, make_same_dims_list, change_shape, remove_tail,\
+    remove_rep, isfullcomplex, make_fullcomplex_array, DimsList, make_vector,\
     ValueArray    #Deprecated
 
 

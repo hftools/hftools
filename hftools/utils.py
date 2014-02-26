@@ -9,20 +9,20 @@
 import abc
 import datetime
 import glob as glob_module
-import logging
 import os
-import pdb
 import re
-import sys
 import warnings
 
-from collections import OrderedDict
 
 import matplotlib.cbook as cbook
 import numpy as np
 
 
 class HFToolsWarning(Warning):
+    pass
+
+
+class HFToolsDeprecationWarning(DeprecationWarning):
     pass
 
 
@@ -46,6 +46,10 @@ def timestamp(highres=False):
 
 def warn(msg):
     warnings.warn(msg, HFToolsWarning)
+
+
+def deprecate(msg):
+    warnings.warn(msg, HFToolsDeprecationWarning)
 
 
 def isnumber(x):

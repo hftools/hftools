@@ -15,18 +15,22 @@ dim
 
 """
 import datetime
-
 import numpy as np
 
-from hftools.utils import is_numlike, is_integer
+from hftools.utils import is_numlike, is_integer, deprecate
 
 
-def info_has_complex(info):
-    for dim in reversed(info):
+def dims_has_complex(dims):
+    for dim in reversed(dims):
         dims = (ComplexDerivAxis, ComplexIndepAxis, ComplexDiagAxis)
         if isinstance(dim, dims):
             return True
     return False
+
+
+def info_has_complex(info):
+    deprecate("info_has_complex is deprecated")
+    return dims_has_complex(info)
 
 
 def flatten(sequence):

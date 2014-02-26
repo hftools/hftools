@@ -12,9 +12,9 @@ import numpy.linalg as linalg
 from numpy import pi, exp, array, zeros, sqrt
 from numpy.lib.stride_tricks import broadcast_arrays, as_strided
 
-from hftools.dataset import make_same_info_list, hfarray,\
+from hftools.dataset import make_same_dims_list, hfarray,\
     DimMatrix_i, DimMatrix_j
-from hftools.dataset.arrayobj import _hfarray, make_same_info
+from hftools.dataset.arrayobj import _hfarray, make_same_dims
 
 
 def angle(z, deg=False):
@@ -25,7 +25,7 @@ def angle(z, deg=False):
 
 
 def make_matrix(a, b, c, d):
-    a, b, c, d = make_same_info_list([a, b, c, d])
+    a, b, c, d = make_same_dims_list([a, b, c, d])
     abcdshape = zip(a.shape, b.shape, c.shape, d.shape)
     maxshape = (tuple(max(x) for x in abcdshape) + (2, 2))
     res = zeros(maxshape, a.dtype)
@@ -165,7 +165,7 @@ def delay(freq, var):
    hfarray([ 0.1,  0.1,  0.1,  0.1,  0.1,  0.1,  0.1,  0.1,  0.1])
 
     """
-    freq, var = make_same_info(freq, var)
+    freq, var = make_same_dims(freq, var)
     f_mean = (freq[:-1] + freq[1:]) / 2
     domega = (2 * pi * (freq[:-1] - freq[1:]))
     dfi = angle(var[1:] / var[:-1])
@@ -321,7 +321,7 @@ class broadcast_matrices(object):
     def __init__(self, a, N=2):
         arrays = a
         if all(isinstance(x, _hfarray) for x in a):
-            arrays = make_same_info_list(arrays)
+            arrays = make_same_dims_list(arrays)
         else:
             raise Exception("Can only broadcast hfarrays")
         try:
@@ -380,7 +380,7 @@ def matrix_multiply(a, b):
     a and b are hfarrays containing dimensions DimMatrix_i and DimMatrix_j.
     Matrix multiplication is done by broadcasting the other dimensions first.
     """
-    A, B = make_same_info(a, b)
+    A, B = make_same_dims(a, b)
     res = np.einsum("...ij,...jk->...ik", A, B)
     return hfarray(res, dims=A.dims)
 
@@ -400,7 +400,7 @@ def det(A):
 
 
 def solve_Ab(A, b, squeeze=True):
-    AA, bb = make_same_info(A, b)
+    AA, bb = make_same_dims(A, b)
     x = np.linalg.solve(AA, bb)
     result = hfarray(x, dims=bb.dims)
     if squeeze:

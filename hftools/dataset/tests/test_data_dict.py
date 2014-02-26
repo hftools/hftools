@@ -15,7 +15,7 @@ import hftools.dataset.dim as ddim
 import hftools.dataset.dataset as dset
 import hftools.dataset as ds
 from hftools.testing import random_value_array, random_complex_value_array,\
-    random_value_array_from_info
+    random_value_array_from_dims
 from hftools.dataset import hfarray, DimSweep, DimRep
 from hftools.testing import TestCase, make_load_tests
 

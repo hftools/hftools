@@ -17,16 +17,16 @@ from hftools.math import dot
 
 
 def Hconj(A):
-    i_idx = A.info_index("i")
-    j_idx = A.info_index("j")
+    i_idx = A.dims_index("i")
+    j_idx = A.dims_index("j")
 
     order = list(range(len(A.shape)))
     order[i_idx], order[j_idx] = order[j_idx], order[i_idx]
     out = A.transpose(*order)
-    info = list(out.info)
-    info[i_idx] = DimMatrix_i(info[i_idx], name="i")
-    info[j_idx] = DimMatrix_j(info[j_idx], name="j")
-    out.info = info
+    dims = list(out.dims)
+    dims[i_idx] = DimMatrix_i(dims[i_idx], name="i")
+    dims[j_idx] = DimMatrix_j(dims[j_idx], name="j")
+    out.dims = dims
     out2 = out.conj()
     return out2
 
@@ -38,7 +38,7 @@ def passive_noise(twoport, Tamb=290):
         C = 2 * k * Tamb * (twoport + Hconj(twoport))
     elif isinstance(twoport, SArray):
         eye = hftools.dataset.make_matrix(np.array([[1, 0], [0j, 1]]),
-                                          info=tuple())
+                                          dims=tuple())
         C = k * Tamb * (eye - dot(twoport, Hconj(twoport)))
     else:
         raise Exception("Can only convert passive Y, Z, and S to NoisyTwoport")

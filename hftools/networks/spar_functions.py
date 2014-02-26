@@ -8,14 +8,14 @@
 #-----------------------------------------------------------------------------
 import numpy as np
 
-from hftools.dataset import make_same_info, _DimMatrix, hfarray
+from hftools.dataset import make_same_dims, _DimMatrix, hfarray
 from hftools.math import det, inv, matrix_multiply
 
 
 def cascadeS(S1, S2, *rest):
     """Cascade arrays containing S-parameters.
     """
-    S1, S2 = make_same_info(S1, S2)
+    S1, S2 = make_same_dims(S1, S2)
     neworder = tuple([x for x in S1.dims if not isinstance(x, _DimMatrix)])
     S1 = S1.reorder_dimensions(*neworder)
     S2 = S2.reorder_dimensions(*neworder)
@@ -39,7 +39,7 @@ def deembedleft(e, X):
     Frequency is first index, measurement sweep is second index and port
     indices are third and fourth index.
     """
-    X, e = make_same_info(X, e)
+    X, e = make_same_dims(X, e)
     neworder = tuple([x for x in X.dims if not isinstance(x, _DimMatrix)])
     X = X.reorder_dimensions(*neworder)
     e = e.reorder_dimensions(*neworder)
@@ -70,7 +70,7 @@ def deembedright(X, e):
     Frequency is first index, measurement sweep is second index and port
     indices are third and fourth index.
     """
-    X, e = make_same_info(X, e)
+    X, e = make_same_dims(X, e)
     neworder = tuple([x for x in X.dims if not isinstance(x, _DimMatrix)])
     X = X.reorder_dimensions(*neworder)
     e = e.reorder_dimensions(*neworder)

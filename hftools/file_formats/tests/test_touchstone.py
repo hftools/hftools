@@ -181,9 +181,9 @@ class TestTouchstone_save(TestCase):
         d = DataBlock()
         d.comments = Comments([])
         fi = DimSweep("freq", [0e9, 1e9, 2e9], outputformat="%15.2f")
-        info = (fi, DimMatrix_i("i", 2), DimMatrix_j("j", 2),)
+        dims = (fi, DimMatrix_i("i", 2), DimMatrix_j("j", 2),)
         d.S = hfarray([[[1 + 1j, 1 + 2j], [2 + 1j, 2 + 2j]]] * 3,
-                         dims=info, outputformat="%.3f")
+                         dims=dims, outputformat="%.3f")
         filename = testpath / "testdata/touchstone/savetest/res_1.txt"
         hftools.file_formats.touchstone.save_touchstone(d, filename)
 
@@ -200,9 +200,9 @@ class TestTouchstone_save(TestCase):
         d = DataBlock()
         d.comments = Comments(["Vg=10"])
         fi = DimSweep("freq", [0e9, 1e9, 2e9], outputformat="%15.2f")
-        info = (fi, DimMatrix_i("i", 2), DimMatrix_j("j", 2),)
+        dims = (fi, DimMatrix_i("i", 2), DimMatrix_j("j", 2),)
         d.S = hfarray([[[1 + 1j, 1 + 2j], [2 + 1j, 2 + 2j]]] * 3,
-                         dims=info, outputformat="%.3f")
+                         dims=dims, outputformat="%.3f")
         filename = testpath / "testdata/touchstone/savetest/res_2.txt"
         hftools.file_formats.touchstone.save_touchstone(d, filename)
 

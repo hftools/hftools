@@ -237,7 +237,7 @@ class UnitFormatter(FormatStrFormatter):
         self.label_template = fmt
 
 
-def get_info_names(x):
+def get_dims_names(x):
     return [y.name for y in x.dims]
 
 
@@ -263,8 +263,8 @@ class HFToolsAxes(Axes):
                 C = zip(itertools.cycle(self.colorcycle), range(Ns[0]))
                 for c, i in C:
                     #kw.update(dict(color=c))
-                    if hasattr(x, "dims") and (get_info_names(x) ==
-                                               get_info_names(y)):
+                    if hasattr(x, "dims") and (get_dims_names(x) ==
+                                               get_dims_names(y)):
                         xx = x[:, i].squeeze()
                     else:
                         xx = x
@@ -275,8 +275,8 @@ class HFToolsAxes(Axes):
                 M = zip(itertools.cycle(self.markercycle), range(Ns[1]))
                 for c, i in C:
                     for m, j in M:
-                        if hasattr(x, "dims") and (get_info_names(x) ==
-                                                   get_info_names(y)):
+                        if hasattr(x, "dims") and (get_dims_names(x) ==
+                                                   get_dims_names(y)):
                             xx = x[:, i, j].squeeze()
                         else:
                             xx = x
@@ -291,8 +291,8 @@ class HFToolsAxes(Axes):
                 for c, i in C:
                     for m, j in M:
                         for l, k in L:
-                            if hasattr(x, "dims") and (get_info_names(x) ==
-                                                       get_info_names(y)):
+                            if hasattr(x, "dims") and (get_dims_names(x) ==
+                                                       get_dims_names(y)):
                                 xx = x[:, i, j, k].squeeze()
                             else:
                                 xx = x
