@@ -149,6 +149,7 @@ class UnitFormatter(FormatStrFormatter):
         self.set_label_fmt(label_fmt)
         self.label_template = None
         self.digs = digs
+        self.default_label = "X"
 
     def __call__(self, x, pos=None):
         locs = [abs(y) for y in self.locs if abs(y) != 0]
@@ -209,7 +210,7 @@ class UnitFormatter(FormatStrFormatter):
 
     def get_label_name_and_unit(self):
         unit = self.get_label_unit()
-        default = "X"
+        default = self.default_label
         if unit == "Hz":
             default = "Frequency"
         elif unit in ["s", "h", "min"]:
@@ -247,6 +248,11 @@ class HFToolsAxes(Axes):
     colorcycle = "bgrcmyk"
     markercycle = ['', 'o', 'v', '^', '<', '>', '*', 'x', '+']
     linecycle = ['-', '--', '-.', ':']
+
+    def __init__(self, *k, **kw):
+        Axes.__init__(self, *k, **kw)
+        self.HFTOOLS_default_x_name = None
+
 
     def _plot_helper(self, x, y, *args, **kwargs):
         if not hasattr(y, "dims"):
@@ -320,6 +326,12 @@ class HFToolsAxes(Axes):
             y = vars[0]
             x = hfarray(y.dims[0])
             vars = (x, y)
+            if self.HFTOOLS_default_x_name is None:
+                self.HFTOOLS_default_x_name = y.dims[0].name
+                fmt = self.axes.xaxis.get_major_formatter()
+                if hasattr(fmt, "update_template"):
+                    fmt.default_label = self.HFTOOLS_default_x_name
+                    fmt.update_template()
 
         if len(vars) == 1:
             y = vars[0]
