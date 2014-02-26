@@ -237,7 +237,7 @@ class DataBlock(object):
         """Convert numeric properties to values"""
         if self.comments:
             for k, v in self.comments.property.iteritems():
-                if hasattr(v, "dtype"):
+                if hasattr(v, "dtype") or isinstance(v, (int, float)):
                     if (k not in self.vardata) and (k not in self.ivardata):
                         self[k] = hfarray(v)
 
@@ -589,6 +589,7 @@ class DataBlock(object):
         out = DataBlock()
         out.blockname = self.blockname
         dims = []
+        sortdata = []
         for x in dimnames:
             if indexed:
                 newname = "%s_index" % x
@@ -597,9 +598,14 @@ class DataBlock(object):
             dims.append(DimSweep(newname, stable_uniq(self[x]),
                                  unit=self[x].unit,
                                  outputformat=self[x].outputformat))
-
+            sortdata.append(self[x])
         dims = tuple(dims)
         dims_shape = tuple(len(x.data) for x in dims)
+
+        sortdata.append(range(len(sortdata[0])))
+
+        sortorder = sorted(zip(*sortdata))
+        sortorderidx = [x[-1] for x in sortorder]
 
         for dim in dims:
             out.ivardata[dim.name] = dim
@@ -613,8 +619,8 @@ class DataBlock(object):
                 continue
             if k in out.ivardata:
                 continue
-            v = hfarray(v, copy=False, order="C")
             i = v.dims_index(replacedim)
+            v = hfarray(v.take(sortorderidx, axis=i), copy=False, order="C")
             new_shape = v.shape[:i] + dims_shape + v.shape[i + 1:]
             v.shape = new_shape
             v.dims = v.dims[:i] + dims + v.dims[i + 1:]
