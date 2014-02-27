@@ -158,7 +158,7 @@ class ReadSPFileFormat(ReadFileFormat):
                 if vname[:1] == "@":
                     unit = db.comments.property[vname].unit
                     data = [float(db.comments.property[vname])]
-                    db[vname[1:]] = DimPartial(vname[1:], dims=data, unit=unit)
+                    db[vname[1:]] = DimPartial(vname[1:], data=data, unit=unit)
                     remove.append(vname)
             for v in remove:
                 del db.comments.property[v]
