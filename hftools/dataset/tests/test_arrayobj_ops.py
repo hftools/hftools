@@ -40,6 +40,8 @@ class Test_binary_ops(TestCase):
         self.assertAllclose(res_v, res_a)
         self.assertIsInstance(res_v, v1.__class__)
 
+
+
     def test_1(self):
         v1 = VArray(random_value_array_from_dims((self.fi, self.gi, self.ri),
                     mean=10))
@@ -89,6 +91,14 @@ class Test_binary_ops(TestCase):
         a2 = np.array(v2).transpose()[:, newaxis]
         self._check(v1, v2, a1, a2)
 
+
+    def test_7(self):
+        v1 = VArray(random_value_array_from_dims((self.fi, self.gi, self.ri),
+                    mean=10))
+        v2 = 5.
+        a1 = np.array(v1)
+
+        self._check(v1, v2, a1, v2)
 
 class Test_binary_ops_sub(Test_binary_ops):
     op = operator.sub

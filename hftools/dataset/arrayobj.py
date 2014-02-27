@@ -424,17 +424,17 @@ class _hfarray(ndarray):
 
     @dims.setter
     def dims(self, value):
-        self._dims = value
+        self._dims = Dims(value)
 
     @property
     def info(self):
         deprecate("hfarray, use dims not info")
-        return self._dims
+        return self.dims
 
     @info.setter
     def info(self, value):
         deprecate("hfarray, use dims not info")
-        self._dims = value
+        self.dims = value
 
     def __repr__(self):
         r = ndarray.__repr__(self)
