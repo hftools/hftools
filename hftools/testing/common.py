@@ -39,6 +39,13 @@ class TestCase(unittest.TestCase):
         warnings.resetwarnings()
         warnings.simplefilter("error", HFToolsWarning)
         self.assertRaises(HFToolsWarning, funk, *k)
+        warnings.simplefilter("ignore", HFToolsWarning)
+
+    def assertHFToolsDeprecationWarning(self, funk, *k):
+        warnings.resetwarnings()
+        warnings.simplefilter("error", HFToolsDeprecationWarning)
+        self.assertRaises(HFToolsDeprecationWarning, funk, *k)
+        warnings.simplefilter("ignore", HFToolsDeprecationWarning)
 
 _IDX = 1
 

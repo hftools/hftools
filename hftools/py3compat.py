@@ -54,7 +54,7 @@ if sys.version_info[0] >= 3:
     from io import StringIO
     input = builtins.input
     print = builtins.print
-    
+
 else:
     PY3 = False
     from ConfigParser import SafeConfigParser
@@ -73,14 +73,14 @@ else:
     filterfalse = itertools.ifilterfalse
     from cStringIO import StringIO
     input = raw_input
-    
+
     def print(*k, **kw):
         kw = kw.copy()
         if "flush" in kw:
             del kw["flush"]
         return __builtin__.print(*k, **kw)
-    
-    
+
+
 def cast_str(s, encoding=None):
     if PY3:
         return cast_unicode(s, encoding)

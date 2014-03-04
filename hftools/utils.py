@@ -17,13 +17,7 @@ import warnings
 import matplotlib.cbook as cbook
 import numpy as np
 
-
-class HFToolsWarning(Warning):
-    pass
-
-
-class HFToolsDeprecationWarning(DeprecationWarning):
-    pass
+from hftools.core.exceptions import HFToolsWarning, HFToolsDeprecationWarning
 
 
 def reset_hftools_warnings():

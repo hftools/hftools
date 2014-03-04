@@ -6,7 +6,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 import os
-
+import warnings
 import numpy as np
 
 from numpy import newaxis
@@ -17,6 +17,7 @@ import hftools.dataset as ds
 
 from hftools.testing import TestCase, make_load_tests
 from hftools.testing import random_value_array
+from hftools.utils import reset_hftools_warnings, HFToolsDeprecationWarning
 
 basepath = os.path.split(__file__)[0]
 load_tests = make_load_tests(aobj)
@@ -531,6 +532,16 @@ class Test_hfarray_1(_Test_hfarray):
         self.a.dims = self.a.dims[:-1]
         self.assertRaises(aobj.HFArrayShapeDimsMismatchError,
                           self.a.verify_dimension)
+
+    def test_info_deprecation(self):
+        a = aobj.hfarray(1)
+        reset_hftools_warnings()
+        self.assertHFToolsDeprecationWarning(lambda x: x.info, a)
+        with warnings.catch_warnings():
+            warnings.resetwarnings()
+            warnings.simplefilter("ignore", HFToolsDeprecationWarning)
+            a.info
+##        reset_hftools_warnings()
 
     def test_dims_index_1(self):
         self.assertEqual(self.a.dims_index("f"), 0)

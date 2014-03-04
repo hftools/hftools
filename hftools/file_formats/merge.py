@@ -7,16 +7,15 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 import itertools
+from collections import OrderedDict
+
+from numpy import array, empty
+import numpy as np
+
+from hftools.core.exceptions import HFToolsHyperCubeError
 from hftools.dataset import DataDict, DimSweep, DimPartial, hfarray,\
     DataBlock, DimRep
 from hftools.file_formats.common import Comments
-from numpy import array, empty
-import numpy as np
-from collections import OrderedDict
-
-
-class HFToolsHyperCubeError(ValueError):
-    pass
 
 
 def merge_blocks_to_association_list(blocks):

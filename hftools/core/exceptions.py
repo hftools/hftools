@@ -7,7 +7,20 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 
+
 class HFToolsIOError(IOError):
+    pass
+
+
+class HFToolsHyperCubeError(ValueError):
+    pass
+
+
+class HFToolsWarning(Warning):
+    pass
+
+
+class HFToolsDeprecationWarning(DeprecationWarning):
     pass
 
 
