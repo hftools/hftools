@@ -6,21 +6,14 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 import os
-import pdb
 
 import numpy as np
-import unittest2 as unittest
-
-import hftools.dataset.dim as ddim
 import hftools.dataset.dataset as dset
-import hftools.dataset as ds
 
-from hftools.testing import random_value_array, random_complex_value_array,\
-    random_value_array_from_dims
 from hftools.dataset import hfarray, DimSweep, DimRep, DimMatrix_i,\
     DimMatrix_j, change_dim, DiagAxis
 from hftools.testing import TestCase, make_load_tests
-from hftools.dataset import DataDict, DataBlock
+from hftools.dataset import DataBlock
 from hftools.dataset.comments import Comments
 
 basepath = os.path.split(__file__)[0]
@@ -49,6 +42,47 @@ class Test_changedim(TestCase):
         self.assertIsInstance(self.d.ivardata["i"], DimMatrix_i)
         self.assertIsInstance(self.d.ivardata["j"], DimMatrix_j)
         self.assertIsInstance(self.d.ivardata["g"], DiagAxis)
+
+
+class Test_interpolate(TestCase):
+    def setUp(self):
+        self.d = DataBlock()
+        f1 = DimSweep("freq", [1e9, 2e9, 3e9, 4e9, 5e9])
+        self.d.y = hfarray([1., 1.1, 1.2, 1.3, 1.4], dims=(f1,))
+
+    def test_none(self):
+        fx = DimSweep("freq", [1e9, 5e9])
+        D = self.d.interpolate(fx)
+        self.assertAllclose(D.y, hfarray([1., 1.4], dims=(fx,)))
+
+    def test_none_2(self):
+        fx = DimSweep("freq", [1e9, 5e9])
+        D = self.d.interpolate(hfarray(fx))
+        self.assertAllclose(D.y, hfarray([1., 1.4], dims=(fx,)))
+
+    def test_none_raise(self):
+        fx = DimSweep("freq", [1.5e9, 5e9])
+        self.assertRaises(ValueError, self.d.interpolate, fx)
+
+    def test_linear(self):
+        fx = DimSweep("freq", [1e9, 1.5e9])
+        D = self.d.interpolate(fx, "linear")
+        self.assertAllclose(D.y, hfarray([1., 1.05], dims=(fx,)))
+
+    def test_shape_error(self):
+        dims = (DimSweep("freq", 2), DimSweep("power", 3))
+        x = hfarray(np.zeros((2, 3), ), dims=dims)
+        self.assertRaises(ValueError, self.d.interpolate, x)
+
+    def test_no_interp(self):
+        """No dimension to interpolate"""
+        fx = DimSweep("Vds", [1e9, 5e9])
+        D = self.d.interpolate(fx)
+        self.assertAllclose(D.y, self.d.y)
+
+    def test_unknown_mode(self):
+        x = DimSweep("freq", 2)
+        self.assertRaises(ValueError, self.d.interpolate, x, "unknown")
 
 if __name__ == '__main__':
         d = DataBlock()

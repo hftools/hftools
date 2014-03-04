@@ -24,7 +24,7 @@ import numpy.random as rnd
 from numpy import zeros, array, linspace
 
 from hftools.dataset.arrayobj import hfarray, ismatrix,\
-    remove_rep
+    remove_rep, _hfarray
 from hftools.dataset.dim import DimBase, DimSweep, DimRep,\
     DimMatrix_i, DimMatrix_j, DiagAxis
 from hftools.utils import warn, stable_uniq
@@ -640,6 +640,50 @@ class DataBlock(object):
         for k, v in self.ivardata.items():
             db[k] = v
         return db
+
+    def interpolate(self, variable, defaultmode=None):
+        out = DataBlock()
+        for k, v in self.vardata.items():
+            out[k] = interpolate(variable, self[k], defaultmode)
+        return out
+
+
+def interpolate(newx, y, defaultmode=None):
+    mode = getattr(y, "interpolationmode", defaultmode)
+    if isinstance(newx, (_hfarray,)):
+        if len(newx.dims) != 1:
+            raise ValueError("hfarray must have one dimension")
+        else:
+            newx = newx.dims[0]
+    if newx not in y.dims:
+        return y
+    oldx = y.dims.get_matching_dim(newx)
+    olddims = y.dims
+    dimidx = olddims.matching_index(newx)
+    newdims = olddims[:dimidx] + (newx,) + olddims[dimidx + 1:]
+    if mode in [None, "none"]:
+        bools = np.array(newx.data)[:, None] == np.array(oldx.data)[None, :]
+        boolarray = hfarray(bools.any(axis=0),
+                            dims=(oldx,),
+                            unit=y.unit,
+                            outputformat=y.outputformat)
+        if boolarray.sum() != len(newx.data):
+            raise ValueError("Missing x-values")
+        data = np.array(y, copy=False)[boolarray]
+    elif mode in ["linear"]:
+        data = interp1d(y.dims[dimidx].data, y, axis=dimidx)(newx.data)
+    else:
+        raise ValueError("Interpolation mode %r unknown" % mode)
+    return hfarray(data, dims=newdims, unit=y.unit,
+                   outputformat=y.outputformat)
+
+
+try:
+    from scipy.interpolate import interp1d
+except ImportError:  # pragma: no cover
+    def interp1d(*k, **kw):
+        raise ImportError("Need scipy to do linear interpolation")
+
 
 if __name__ == '__main__':
 
