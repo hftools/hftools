@@ -22,7 +22,7 @@ import numpy.lib.stride_tricks as np_stride_tricks
 
 from hftools.dataset.dim import DimSweep, DimRep, DimMatrix_i, DimMatrix_j,\
     _DiagAxis, dims_has_complex, CPLX, DimBase, DimAnonymous, DiagAxis
-from hftools.utils import is_numlike, is_integer, warn, deprecate
+from hftools.utils import is_numlike, is_integer, warn, deprecate, isnumber
 from hftools.core import HFArrayShapeDimsMismatchError, HFArrayError,\
     DimensionMismatchError
 
@@ -344,7 +344,10 @@ def check_instance(func):
                 return NotImplemented
         except AttributeError:
             pass
-        a, b = make_same_dims(self, hfarray(other))
+        if isnumber(other):
+            a, b = self, other
+        else:
+            a, b = make_same_dims(self, hfarray(other))
         return func(a, b)
     return a
 
