@@ -228,10 +228,10 @@ class UnitFormatter(FormatStrFormatter):
                 fmt = fmt.replace("[]", u"[%(prefix)sU]")
         elif "[^]" in fmt:
             if self.get_label_unit():
-                fmt = fmt.replace("[^]", ur"$[10^{{%%(powerprefix).0f" +
-                                  ur"\rm{{{unit}}}}]$")
+                fmt = fmt.replace("[^]", u"$[10^{{%%(powerprefix).0f" +
+                                  u"\\rm{{{unit}}}}]$")
             else:
-                fmt = fmt.replace("[^]", ur"$[10^{{%(powerprefix).0f}}]$")
+                fmt = fmt.replace("[^]", u"$[10^{{%(powerprefix).0f}}]$")
         if "{unit}" in fmt or "{default}" in fmt:
             dct = self.get_label_name_and_unit()
             fmt = fmt.format(**dct)

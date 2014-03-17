@@ -7,25 +7,36 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 from __future__ import print_function, unicode_literals
-import six, sys
+import os
+import six
+import sys
 
 DEFAULT_ENCODING = "cp1252"
 
+
+integer_types = six.integer_types
+text_type = six.text_type
+
+
 def no_code(x, encoding=None):
     return x
+
 
 def decode(s, encoding=None):
     encoding = encoding or DEFAULT_ENCODING
     return s.decode(encoding, "replace")
 
+
 def encode(u, encoding=None):
     encoding = encoding or DEFAULT_ENCODING
     return u.encode(encoding, "replace")
+
 
 def cast_unicode(s, encoding=None):
     if isinstance(s, bytes):
         return decode(s, encoding)
     return s
+
 
 def cast_bytes(s, encoding=None):
     if not isinstance(s, bytes):
@@ -33,18 +44,19 @@ def cast_bytes(s, encoding=None):
     return s
 
 
-
 if sys.version_info[0] >= 3:
     PY3 = True
     from functools import reduce
     from configparser import ConfigParser as SafeConfigParser
     from configparser import NoOptionError
+
     def reraise(tp, value, tb=None):
         raise tp(value).with_traceback(tb)
     import copyreg
     import builtins
     import itertools
     from subprocess import Popen, PIPE
+
     def popen(command):
         p = Popen(command, shell=True,
                   stdin=PIPE, stdout=PIPE, stderr=PIPE)
@@ -54,7 +66,7 @@ if sys.version_info[0] >= 3:
     from io import StringIO
     input = builtins.input
     print = builtins.print
-
+    getcwdu = os.getcwd
 else:
     PY3 = False
     from ConfigParser import SafeConfigParser
@@ -64,6 +76,7 @@ else:
 """)
     import copy_reg as copyreg
     import os
+
     def popen(command):
         return os.popen3(command)
     import __builtin__
@@ -73,6 +86,7 @@ else:
     filterfalse = itertools.ifilterfalse
     from cStringIO import StringIO
     input = raw_input
+    getcwdu = os.getcwdu
 
     def print(*k, **kw):
         kw = kw.copy()

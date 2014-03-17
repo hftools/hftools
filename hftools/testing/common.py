@@ -8,10 +8,17 @@
 #-----------------------------------------------------------------------------
 import doctest
 import random
-import unittest2 as unittest
 import warnings
 
-from unittest2 import skip
+from hftools.py3compat import PY3
+
+if PY3:
+    import unittest
+    from unittest import skip
+else:
+    import unittest2 as unittest
+    from unittest2 import skip
+
 
 import numpy as np
 from numpy.random import randint, normal
@@ -32,8 +39,13 @@ class TestCase(unittest.TestCase):
     def assertIsNotInstance(self, obj, cls):
         self.assertFalse(isinstance(obj, cls))
 
-    def assertIsInstance(self, obj, cls):
-        self.assertTrue(isinstance(obj, cls))
+    def assertIsInstance(self, obj, cls, msg=None):
+        """Same as self.assertTrue(isinstance(obj, cls)), with a nicer
+        default message."""
+        if not isinstance(obj, cls):
+            arg = (unittest.case.safe_repr(obj), cls)
+            standardMsg = '%s is not an instance of %r' % arg
+            self.fail(self._formatMessage(msg, standardMsg))
 
     def assertHFToolsWarning(self, funk, *k):
         warnings.resetwarnings()

@@ -34,7 +34,7 @@ siunit_names = ["Hz", "s", "S", "Ohm", "m", "V", "A", "F", "W"]
 siunits = imp.new_module("siunits")
 
 for u in siunit_names:
-    for p, val in siprefixes.iteritems():
+    for p, val in siprefixes.items():
         setattr(siunits, p + u, val)
 
 

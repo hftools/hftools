@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*
+from __future__ import print_function
 #-----------------------------------------------------------------------------
 # Copyright (c) 2014, HFTools Development Team.
 #
@@ -100,7 +101,7 @@ class DataDict(dict):
     def __getattr__(self, key):
         try:
             return self[key]
-        except KeyError, exc:
+        except KeyError as exc:
             raise AttributeError(exc)
 
     def __delattr__(self, key):
@@ -288,7 +289,7 @@ class DataBlock(object):
     def __getattr__(self, key):
         try:
             return self.__getitem__(key)
-        except KeyError, exc:
+        except KeyError as exc:
             raise AttributeError(exc)
 
     def __delitem__(self, key):
@@ -740,6 +741,6 @@ if __name__ == '__main__':
     db.vd = normal(dims=sweep_dims)
     db.vg = normal(dims=sweep_dims)
 
-    print db.report()
+    print(db.report())
     from hftools.file_formats.spdata import read_spdata
     dc = read_spdata("../io/tests/testdata/sp_oneport_2_1.txt")

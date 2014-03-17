@@ -18,7 +18,7 @@ import datetime
 import numpy as np
 
 from hftools.utils import is_numlike, is_integer, deprecate
-
+from hftools.py3compat import integer_types
 
 def dims_has_complex(dims):
     for dim in reversed(dims):
@@ -67,13 +67,13 @@ class DimBase(object):
         if outputformat is not None:
             dim_outputformat = outputformat
 
-        if isinstance(dim_data, (int, long)):
-            dim_data = range(dim_data)
+        if isinstance(dim_data, integer_types):
+            dim_data = list(range(dim_data))
 
         if hasattr(dim_data, "tolist"):
             dim_data = [dim_data.tolist()]
         if not isinstance(dim_data, (list, tuple)):
-            import pdb;pdb.set_trace()
+            dim_data = list(dim_data)
 
         self._data = tuple(flatten(dim_data))
         self._name = dim_name
@@ -115,7 +115,7 @@ class DimBase(object):
     def __hfarray__(self):
         return (self.data, (self,))
 
-    def __cmp__(self, other):
+    def __lt__(self, other):
         a = (self.sortprio, self.name, self.__class__, self._data,
              self._unit, self._outputformat)
         try:
@@ -124,7 +124,19 @@ class DimBase(object):
         except AttributeError:
             a = self.name
             b = other
-        return cmp(a, b)
+        return a < b
+
+    def __eq__(self, other):
+        a = (self.sortprio, self.name, self.__class__, self._data,
+             self._unit, self._outputformat)
+        try:
+            b = (other.sortprio, other.name, other.__class__, other._data,
+                 other._unit, self._outputformat)
+        except AttributeError:
+            a = self.name
+            b = other
+        return a == b
+
 
     def __repr__(self):
         return "%s(%r, shape=%r)" % (self.__class__.__name__,

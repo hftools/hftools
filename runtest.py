@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
-import unittest2 as unittest
+from __future__ import print_function
 import os
 import sys
-import warnings
-import numpy as np
-from fnmatch import fnmatch
-from unittest2.main import TestProgram
+from hftools.py3compat import PY3
+
+if PY3:
+    import unittest
+else:
+    import unittest2 as unittest
+
 
 pjoin = os.path.join
 psplit = os.path.split
 
 #warnings.filterwarnings(action='ignore', category=np.ModuleDeprecationWarning)
 #warnings.filterwarnings(action='error', category=DeprecationWarning)
-
 
 
 def main():
@@ -41,8 +43,8 @@ def main():
             cov.start()
         except ImportError:
             if docoverage:
-                print "coverage module is missing. Running tests "\
-                      "without coverage"
+                print("coverage module is missing. Running tests "
+                      "without coverage")
             docoverage = False
 
     runner = unittest.TextTestRunner  # OBS do not instantiate class!

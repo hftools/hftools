@@ -25,6 +25,7 @@ from hftools.dataset.dim import DimSweep, DimRep, DimMatrix_i, DimMatrix_j,\
 from hftools.utils import is_numlike, is_integer, warn, deprecate, isnumber
 from hftools.core import HFArrayShapeDimsMismatchError, HFArrayError,\
     DimensionMismatchError
+from hftools.py3compat import text_type
 
 
 def get_new_anonymous_dim(dims, *k, **kw):
@@ -40,7 +41,7 @@ def get_new_anonymous_dim(dims, *k, **kw):
 
 class Dims(tuple):
     def __contains__(self, value):
-        if isinstance(value, (str, unicode)):
+        if isinstance(value, text_type):
             value = DimBase(value, 1)  # Dummy dim
         if not isinstance(value, DimBase):
             return False
@@ -273,7 +274,7 @@ def remove_rep(data, newdimname="AllReps"):
 #    pdb.set_trace()
 
     if order:
-        dims = zip(*order)[1]
+        dims = list(zip(*order))[1]
 
         newdata = data.reorder_dimensions(*(data.dims[:order[0][0]] + dims))
         newdata = hfarray(np.ascontiguousarray(data, dtype=data.dtype),
@@ -477,7 +478,7 @@ class _hfarray(ndarray):
         return self.dims_index(name, cls)
 
     def replace_dim(self, olddim, newdim):
-        if isinstance(olddim, (str, unicode)):
+        if isinstance(olddim, text_type):
             olddim = self.dims_index(olddim)
             olddim = self.dims[olddim]
             if np.issubclass_(newdim, DimBase):
@@ -869,7 +870,7 @@ def axis_handler(a, axis):
         return None
     elif isinstance(axis, int):
         return a.dims[axis]
-    if isinstance(axis, (str, unicode)):
+    if isinstance(axis, text_type):
         i = a.dims_index(axis)
         axis = a.dims[i]
 
@@ -907,7 +908,7 @@ def multiple_axis_handler(a, axis):
             outaxis.append(a.dims[ax])
             outidx.append(ax)
             continue
-        if isinstance(ax, (str, unicode)):
+        if isinstance(ax, text_type):
             i = a.dims_index(ax)
             ax = a.dims[i]
         if isinstance(ax, type) and issubclass(ax, DimBase):
