@@ -5,7 +5,7 @@ Example:
 from path import path
 d = path('/home/guido/bin')
 for f in d.files('*.py'):
-    f.chmod(0755)
+    f.chmod(0o0755)
 
 This module requires Python 2.2 or later.
 
@@ -884,10 +884,10 @@ class path(_base):
 
     # --- Create/delete operations on directories
 
-    def mkdir(self, mode=0777):
+    def mkdir(self, mode=0o0777):
         os.mkdir(self, mode)
 
-    def makedirs(self, mode=0777, silent=False):
+    def makedirs(self, mode=0o0777, silent=False):
         if silent:
             if not self.exists():
                 os.makedirs(self, mode)
@@ -907,7 +907,7 @@ class path(_base):
         """ Set the access/modified times of this file to the current time.
         Create the file if it does not exist.
         """
-        fd = os.open(self, os.O_WRONLY | os.O_CREAT, 0666)
+        fd = os.open(self, os.O_WRONLY | os.O_CREAT, 0o0666)
         os.close(fd)
         os.utime(self, None)
 
