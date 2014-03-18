@@ -16,9 +16,11 @@ dim
 """
 import datetime
 import numpy as np
+import six
 
 from hftools.utils import is_numlike, is_integer, deprecate
 from hftools.py3compat import integer_types
+
 
 def dims_has_complex(dims):
     for dim in reversed(dims):
@@ -137,7 +139,6 @@ class DimBase(object):
             b = other
         return a == b
 
-
     def __repr__(self):
         return "%s(%r, shape=%r)" % (self.__class__.__name__,
                                      self.name,
@@ -176,8 +177,8 @@ class _DiagMeta(type):
                 cls._deriv_axis._indep_axis = cls._indep_axis
 
 
+@six.add_metaclass(_DiagMeta)
 class _DiagAxis(DimBase):
-    __metaclass__ = _DiagMeta
     sortprio = 0
 
     @property

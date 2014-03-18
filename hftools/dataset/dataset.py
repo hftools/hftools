@@ -30,8 +30,7 @@ from hftools.dataset.dim import DimBase, DimSweep, DimRep,\
     DimMatrix_i, DimMatrix_j, DiagAxis
 from hftools.utils import warn, stable_uniq
 from hftools.dataset.helper import guess_unit_from_varname
-from hftools.py3compat import cast_unicode, cast_str
-
+from hftools.py3compat import cast_unicode, cast_str, string_types
 
 class DataBlockError(Exception):
     pass
@@ -141,12 +140,12 @@ class DataDict(dict):
         self[newname] = vdata
 
     def view(self):
-        out = self.__class__([(k, v.view()) for k, v in self.iteritems()])
+        out = self.__class__([(k, v.view()) for k, v in self.items()])
         out.order = self.order[:]
         return out
 
     def copy(self):
-        out = self.__class__([(k, v.copy()) for k, v in self.iteritems()])
+        out = self.__class__([(k, v.copy()) for k, v in self.items()])
         out.order = self.order[:]
         return out
 
@@ -172,7 +171,7 @@ class DataDict(dict):
             yield k
 
     def __dir__(self):  # pragma: no cover
-        return self.order + dir(type(self)) + self.__dict__.keys()
+        return self.order + dir(type(self)) + list(self.__dict__.keys())
 
 reg_matrix_name = re.compile("([_A-Za-z]([_A-Za-z0-9]*"
                              "[_A-Za-z])?)([0-9][0-9])")
@@ -206,7 +205,7 @@ class DataBlock(object):
         self.__dict__["_xname"] = None
 
     def replace_dim(self, olddim, newdim):
-        if isinstance(olddim, (str, unicode)):
+        if isinstance(olddim, string_types):
             if olddim not in self.ivardata:
                 msg = "%r dimension not present in datablock ivars: %r"
                 msg = msg % (olddim, self.ivardata.keys())
@@ -237,7 +236,7 @@ class DataBlock(object):
     def values_from_property(self):
         """Convert numeric properties to values"""
         if self.comments:
-            for k, v in self.comments.property.iteritems():
+            for k, v in self.comments.property.items():
                 if hasattr(v, "dtype") or isinstance(v, (int, float)):
                     if (k not in self.vardata) and (k not in self.ivardata):
                         self[k] = hfarray(v)
@@ -246,7 +245,7 @@ class DataBlock(object):
     def blockname(self):
         if self._blockname is None:
             if "FILENAME" in self:
-                return cast_unicode(self.FILENAME.flat.next())
+                return cast_unicode(self.FILENAME.flat[0])
         return self._blockname
 
     @blockname.setter
@@ -425,7 +424,7 @@ class DataBlock(object):
                 out[v] = data
                 continue
             newinfo = list(data.dims)
-            reorder = range(data.ndim)
+            reorder = list(range(data.ndim))
             del newinfo[i]
             del reorder[i]
             reorder = tuple([i] + reorder)
@@ -530,18 +529,18 @@ class DataBlock(object):
 
     def __dir__(self):  # pragma: no cover
         elemnames = []
-        for k, v in self.vardata.iteritems():
+        for k, v in self.vardata.items():
             if ismatrix(v):
                 if v.shape[-2] <= 10 and v.shape[-1] <= 10:
                     for i in range(v.shape[-2]):
                         for j in range(v.shape[-1]):
                             elemnames.append("%s%s%s" % (k, i + 1, j + 1))
         return (self.allvarnames + elemnames + dir(type(self)) +
-                self.__dict__.keys())
+                list(self.__dict__.keys()))
 
     def guess_units(self, guessunit=True):
         if guessunit:
-            if isinstance(guessunit, (str, unicode)):
+            if isinstance(guessunit, string_types):
                 varnames = [guessunit]
             elif isinstance(guessunit, (list, tuple, set, dict)):
                 varnames = list(guessunit)
@@ -585,7 +584,7 @@ class DataBlock(object):
         return out
 
     def hyper(self, dimnames, replacedim, indexed=False, all=True):
-        if isinstance(replacedim, (str, unicode)):
+        if isinstance(replacedim, string_types):
             replacedim = self.ivardata[replacedim]
         out = DataBlock()
         out.blockname = self.blockname
@@ -611,7 +610,7 @@ class DataBlock(object):
         for dim in dims:
             out.ivardata[dim.name] = dim
 
-        for k, v in self.vardata.iteritems():
+        for k, v in self.vardata.items():
             if replacedim not in v.dims:
                 if all:
                     out[k] = v

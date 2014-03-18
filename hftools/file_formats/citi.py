@@ -15,6 +15,7 @@ CITI File Format
     .. autofunction:: save_citi
     .. autoexception:: CITIFileError
 """
+from __future__ import print_function
 import re
 
 import numpy as np
@@ -60,7 +61,7 @@ class ReadCITIFileFormat(ReadFileFormat):
         for idx, rad in enumerate(stream):
             lineno = idx + 1
             if self.verbose:
-                print "\r               \r", lineno,
+                print("\r               \r", lineno, end="")
             rad = rad.lstrip()
             if not rad:  # skip empty lines
                 continue

@@ -20,11 +20,14 @@ from hftools.dataset import DimRep, DimSweep, hfarray, DataBlock, DimMatrix_i, D
 from hftools.dataset.dim import DimBase
 from hftools.file_formats.common import Comments
 
+from hftools.py3compat import string_types, cast_unicode
+
+
 def unpack_dim(dim):
     return dim.__class__.__name__, dim.name, dim.unit
 
 def save_hdf5(db, h5file, name="datablock", mode="w", compression="gzip", **kw):
-    if isinstance(h5file, (str, unicode)):
+    if isinstance(h5file, string_types):
         fil = h5py.File(h5file, mode)
     else:
         fil = h5file
@@ -76,11 +79,11 @@ def save_hdf5(db, h5file, name="datablock", mode="w", compression="gzip", **kw):
         fil.close()
 
 
-dims_dict = dict((name, dim) for name, dim in hftools.dataset.__dict__.iteritems() if isinstance(dim, type) and issubclass(dim, DimBase))
+dims_dict = dict((name, dim) for name, dim in hftools.dataset.__dict__.items() if isinstance(dim, type) and issubclass(dim, DimBase))
 #print dims
 
 def read_hdf5(h5file, name="datablock", **kw):
-    if isinstance(h5file, (str, unicode)):
+    if isinstance(h5file, string_types):
         fil = h5py.File(h5file, "r")
     else:
         fil = h5file
@@ -111,12 +114,12 @@ def read_hdf5(h5file, name="datablock", **kw):
     for k in vardata:
         v = vardata[k]
         datadtype = v.attrs[r"data\dtype"] or None
-        dims = tuple(db.ivardata[dimname] for dimname in v.attrs[r"info\name"])
+        dims = tuple(db.ivardata[cast_unicode(dimname)] for dimname in v.attrs[r"info\name"])
         unit = v.attrs.get(r"data\unit", "none")
         if unit.lower() == "none":
             unit = None
         db[k] = hfarray(np.array(v), dtype=datadtype, dims=dims, unit=unit)
-    if isinstance(h5file, (str, unicode)):
+    if isinstance(h5file, string_types):
         fil.close()
 
     if kw.get("property_to_vars", False):

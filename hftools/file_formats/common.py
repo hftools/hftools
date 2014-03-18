@@ -12,6 +12,7 @@ hftools.file_formats.common
 ================
 
 """
+from __future__ import print_function
 import re
 import itertools
 import time
@@ -111,7 +112,7 @@ for rad in _examples.split("\n"):
     if reg_comment_all.match(rad) is None:
         res = reg_comment.match(rad)
         if res:
-            print res.groups(), rad
+            print(res.groups(), rad)
 
 
 def convert(convertors=[], *vars):
@@ -155,11 +156,9 @@ else:
         timestamp = time.mktime(time.strptime(value, "%Y-%m-%d"))
         return datetime.date.fromtimestamp(timestamp)
 
-
     def conv_time(value):
         timestamp = time.mktime(time.strptime(value, "%H:%M:%S"))
         return datetime.time.fromtimestamp(timestamp)
-
 
     def conv_date_time(value):
         value = " ".join(value.strip().split())
@@ -206,7 +205,7 @@ class Comments(object):
     def add_from_comment(self, comment):
         comment = comment.lstrip("!").strip()
         if comment:
-            for key, v in process_comment(comment).iteritems():
+            for key, v in process_comment(comment).items():
                 self.property[key] = v
 
     def add_from_comments(self, comments):
@@ -215,7 +214,7 @@ class Comments(object):
 
     def extend(self, comment):
         self.fullcomments.extend(comment.fullcomments)
-        for k, v in comment.property.iteritems():
+        for k, v in comment.property.items():
             self.property[k] = v
 
     def copy(self):
@@ -236,7 +235,7 @@ class Comments(object):
                   valuefmt % ("Value".center(valuecolwid, " "))),
                  ("-" * keycolwid,
                   "-" * valuecolwid)]
-        for key, value in sorted(self.property.iteritems()):
+        for key, value in sorted(self.property.items()):
             if hasattr(value, "strip"):
                 value = value.strip()
             table.append((keyfmt % key, valuefmt % (value)))
@@ -285,15 +284,6 @@ def remove_enclosing_function(functionname, newpat="%s",
         *report_error*
             om exception skall rapporteras
 
-    >>> x=DataTable({'f':[1,2,3], 'Mean(x)':[1,2,3]})
-    >>> x.xname='f'
-    >>> x.remove_enclosing_function('Mean')
-    >>> x.outputformat="%.0f"
-    >>> print x.table().replace("\t","    ").strip()
-    f    x
-    1    1
-    2    2
-    3    3
 
     """
     regexp = remove_enclosing_function_reg
@@ -315,7 +305,7 @@ def normalize_names(data):
          b1/a1 raw -> b11
     """
     out = data.copy()
-    for old, new in _trtable.iteritems():
+    for old, new in _trtable.items():
         out.rename(old, new)
     meantr = remove_enclosing_function("Mean")
     stdtr = remove_enclosing_function("Std", "s_%s")
@@ -432,7 +422,7 @@ def make_block_iterator(data, first=False):
             header = []
             columns = []
             fmts = []
-            for k, v in data.vardata.iteritems():
+            for k, v in data.vardata.items():
                 if v.dims == tuple():
                     comments.property[k] = v
 

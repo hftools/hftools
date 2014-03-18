@@ -161,7 +161,7 @@ class Comments(object):
     def add_from_comment(self, comment):
         comment = comment.lstrip("!").strip()
         if comment:
-            for key, v in process_comment(comment).iteritems():
+            for key, v in process_comment(comment).items():
                 self.property[key] = v
             self.fullcomments.append(comment)
 
@@ -171,7 +171,7 @@ class Comments(object):
 
     def extend(self, comment):
         self.fullcomments.extend(comment.fullcomments)
-        for k, v in comment.property.iteritems():
+        for k, v in comment.property.items():
             self.property[k] = v
 
     def copy(self):
@@ -192,7 +192,7 @@ class Comments(object):
                   valuefmt % ("Value".center(valuecolwid, " "))),
                  ("-" * keycolwid,
                   "-" * valuecolwid)]
-        for key, value in sorted(self.property.iteritems()):
+        for key, value in sorted(self.property.items()):
             if hasattr(value, "strip"):
                 value = value.strip()[:valuecolwid]
             table.append((keyfmt % key, valuefmt % (value)))

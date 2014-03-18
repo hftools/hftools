@@ -15,7 +15,7 @@ MDIF
     .. autoclass:: MDIFBunch
 
 """
-
+from __future__ import print_function
 import re
 import itertools
 import time
@@ -174,7 +174,7 @@ class ReadMDIFFileFormat(ReadFileFormat):
         for idx, line in enumerate(stream):
             lineno = idx + 1
             if self.verbose:
-                print "\r               \r", lineno,
+                print("\r               \r", lineno, end="")
             line = line.lstrip()
             if not line:
                 continue
@@ -383,7 +383,7 @@ def match_matrix_names(header):
     for v in header:
         m = reg_matrix.match(v)
         if not m:
-            print "%s not a valid variable" % v
+            print("%s not a valid variable" % v)
         else:
             vname, x, i, matrixp, j, vtype = m.groups()
             if x and matrixp:

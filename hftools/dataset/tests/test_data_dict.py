@@ -9,7 +9,6 @@ import os
 import pdb
 
 import numpy as np
-import unittest2 as unittest
 
 import hftools.dataset.dim as ddim
 import hftools.dataset.dataset as dset
