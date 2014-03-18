@@ -10,12 +10,13 @@ from __future__ import print_function, unicode_literals
 import os
 import six
 import sys
-
+import numpy as np
 DEFAULT_ENCODING = "cp1252"
 
 
-integer_types = six.integer_types
+integer_types = six.integer_types + (np.integer,)
 text_type = six.text_type
+string_types = six.string_types
 
 
 def no_code(x, encoding=None):
