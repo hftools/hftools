@@ -32,3 +32,7 @@ nosetests.xml
 *.swp
 
 .ropeproject
+
+
+#temp files
+temp.*
