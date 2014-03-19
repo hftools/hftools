@@ -67,7 +67,7 @@ class ReadTouchstoneFileFormat(ReadFileFormat):
                     msg = "Second # info at lineno: %d" % lineno
                     raise TouchstoneError(msg)
             else:
-                datalist.append(map(float, rad.split()))
+                datalist.append(list(map(float, rad.split())))
         if info is None:
             raise TouchstoneError("No # info line in file")
         comments = Comments(comments)
@@ -226,10 +226,10 @@ def format_touchstone_block(sweepvars, header, fmts,
 def save_touchstone(db, filename):
     """Write a Datablock to a touchstone-format file with name filename.
     """
-    fil = open(filename, "w")
-    for rad in db_iterator(db, format_touchstone_block):
-        fil.write("\t".join(rad))
-        fil.write("\n")
+    with open(filename, "w") as fil:
+        for rad in db_iterator(db, format_touchstone_block):
+            fil.write("\t".join(rad))
+            fil.write("\n")
 
 
 def read_touchstone(filnamn, make_complex=True, property_to_vars=True,

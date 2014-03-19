@@ -7,11 +7,10 @@
 #-----------------------------------------------------------------------------
 import numpy as np
 import os, pdb
-import unittest2 as unittest
 import hftools.file_formats
 from hftools import path
 from hftools.testing import TestCase
-import base_test
+from hftools.file_formats.tests import base_test
 from hftools.dataset import DataBlock, hfarray, DimSweep
 from hftools.file_formats.common import Comments
 from hftools.core.exceptions import HFToolsIOError

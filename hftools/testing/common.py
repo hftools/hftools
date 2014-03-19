@@ -77,6 +77,7 @@ def make_load_tests(module):
     """
     warnings.simplefilter("error", HFToolsWarning)
     warnings.simplefilter("error", HFToolsDeprecationWarning)
+#    warnings.simplefilter("error", DeprecationWarning)
 
     def load_tests(loader, standard_tests, pattern):
         suite = unittest.TestSuite()

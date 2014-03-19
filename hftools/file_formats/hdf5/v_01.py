@@ -9,18 +9,17 @@
 try:
     import h5py
     import_failed = False
-except ImportError: # pragma: no cover
+except ImportError:  # pragma: no cover
     import_failed = True
     h5py = None
 
-import os
-import hftools, time, datetime
+import hftools
 import numpy as np
-from hftools.dataset import DimRep, DimSweep, hfarray, DataBlock, DimMatrix_i, DimMatrix_j
+from hftools.dataset import DimRep, hfarray, DataBlock
 from hftools.dataset.dim import DimBase
 from hftools.file_formats.common import Comments
 
-from hftools.py3compat import string_types, cast_unicode
+from hftools.py3compat import string_types, cast_unicode, cast_bytes
 
 
 def unpack_dim(dim):
@@ -41,7 +40,7 @@ def save_hdf5(db, h5file, name="datablock", mode="w", compression="gzip", **kw):
     ivardata = grp.create_group("ivardata")
     comments = grp.create_group("Comments")
     if db.comments:
-        com = np.array(db.comments.fullcomments)
+        com = np.array([cast_bytes(x) for x in db.comments.fullcomments])
         comments.create_dataset("fullcomments", data=com, compression=compression)
 #        pdb.set_trace()
 
@@ -60,8 +59,8 @@ def save_hdf5(db, h5file, name="datablock", mode="w", compression="gzip", **kw):
                 data = data.astype(np.uint64)
             dset = vardata.create_dataset(k, data=data) #can not compress scalars
             name = []
-        dset.attrs[r"info\name"] = map(str, name)
-        dset.attrs[r"data\unit"] = str(db[k].unit)
+        dset.attrs[r"info\name"] = list(map(cast_bytes, name))
+        dset.attrs[r"data\unit"] = cast_bytes(db[k].unit if db[k].unit is not None else "None")
         dset.attrs[r"data\dtype"] = datadtype
 
     for k in db.ivardata:
@@ -73,9 +72,9 @@ def save_hdf5(db, h5file, name="datablock", mode="w", compression="gzip", **kw):
         dset = ivardata.create_dataset(k, data=data, compression=compression)
         klass, name, unit = unpack_dim(db.ivardata[k])
         dset.attrs[r"info\class"] = klass
-        dset.attrs[r"info\unit"] = str(unit)
+        dset.attrs[r"info\unit"] = cast_bytes(unit if unit is not None else "None")
         dset.attrs[r"info\dtype"] = datadtype
-    if isinstance(h5file, (str, unicode)):
+    if isinstance(h5file, string_types):
         fil.close()
 
 
@@ -96,7 +95,7 @@ def read_hdf5(h5file, name="datablock", **kw):
     comments = grp["Comments"]
 
     if "fullcomments" in comments and len(comments["fullcomments"]):
-        db.comments = Comments([x.strip() for x in np.array(comments["fullcomments"])])
+        db.comments = Comments([cast_unicode(x).strip() for x in np.array(comments["fullcomments"])])
     else:
         db.comments = Comments()
     ivardata = grp["ivardata"]
@@ -105,7 +104,7 @@ def read_hdf5(h5file, name="datablock", **kw):
         v = ivardata[k]
         datadtype = v.attrs[r"info\dtype"] or None
         dimcls = dims_dict.get(v.attrs[r"info\class"], DimRep)
-        unit = v.attrs.get(r"info\unit", "none")
+        unit = str(v.attrs.get(r"info\unit", "none"))
         if unit.lower() == "none":
             unit = None
         vdata = np.array(np.array(v), dtype=datadtype)
@@ -115,7 +114,7 @@ def read_hdf5(h5file, name="datablock", **kw):
         v = vardata[k]
         datadtype = v.attrs[r"data\dtype"] or None
         dims = tuple(db.ivardata[cast_unicode(dimname)] for dimname in v.attrs[r"info\name"])
-        unit = v.attrs.get(r"data\unit", "none")
+        unit = cast_unicode(v.attrs.get(r"data\unit", "none"))
         if unit.lower() == "none":
             unit = None
         db[k] = hfarray(np.array(v), dtype=datadtype, dims=dims, unit=unit)

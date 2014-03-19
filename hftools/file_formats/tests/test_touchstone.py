@@ -9,7 +9,7 @@ import numpy as np
 import hftools.file_formats
 from hftools import path
 from hftools.testing import TestCase
-import base_test
+from hftools.file_formats.tests import base_test
 from hftools.file_formats import TouchstoneError, Comments
 from hftools.dataset import DataBlock, hfarray, DimSweep, DimMatrix_i,\
     DimMatrix_j

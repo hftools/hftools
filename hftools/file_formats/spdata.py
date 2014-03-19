@@ -27,7 +27,7 @@ from hftools.file_formats.common import Comments, db_iterator,\
 from hftools.file_formats.readbase import ReadFileFormat
 from hftools.file_formats.readbase import Token
 from hftools.utils import to_numeric
-
+from hftools.py3compat import string_types
 
 class SPDataIOError(HFToolsIOError):
     pass
@@ -84,7 +84,7 @@ class ReadSPFileFormat(ReadFileFormat):
         """Bunch tagged stream into sub blocks. Each sub block
         containing a measurement data block.
         """
-        token, lineno, rad = stream.next()
+        token, lineno, rad = next(stream)
         running = True
         while running:
             comments = []
@@ -94,28 +94,28 @@ class ReadSPFileFormat(ReadFileFormat):
             while token == "Comment":
                 comments.append(rad)
                 try:
-                    token, lineno, rad = stream.next()
+                    token, lineno, rad = next(stream)
                 except StopIteration:
                     raise SPDataIOError("File can not end in comments")
             if token == "ENDPROP":
                 yield out
                 try:
-                    token, lineno, rad = stream.next()
+                    token, lineno, rad = next(stream)
                 except StopIteration:
                     running = False
                 continue
             if token == "Header":
                 header.append(rad)
                 try:
-                    token, lineno, rad = stream.next()
+                    token, lineno, rad = next(stream)
                 except StopIteration:
                     raise SPDataIOError("File can not end in header")
             else:
                 raise SPDataIOError("Missing header")
             while running and (token == "Data"):
-                data.append(map(to_numeric, rad.split("\t")))
+                data.append(list(map(to_numeric, rad.split("\t"))))
                 try:
-                    token, lineno, rad = stream.next()
+                    token, lineno, rad = next(stream)
                 except StopIteration:
                     running = False
             yield out
@@ -177,7 +177,7 @@ def format_sp_block(sweepvars, header, fmts, columns, blockname, comments):
         if comments.property:
             pass
             #yield ["!PROPERTIES"]
-        for k, v in comments.property.iteritems():
+        for k, v in comments.property.items():
             if v.unit:
                 args = (v.outputformat[1:],)
                 vfmt = "%%(name)s [%%(unit)s]: %%(value)%s" % args
@@ -209,7 +209,7 @@ def format_sp_block(sweepvars, header, fmts, columns, blockname, comments):
 def save_spdata(db, filename):
     """Write a Datablock to a sp-format file with name filename.
     """
-    if isinstance(filename, (str, unicode)):
+    if isinstance(filename, string_types):
         fil = open(filename, "w")
     else:
         fil = filename
@@ -217,7 +217,7 @@ def save_spdata(db, filename):
         fil.write(u"\t".join(rad))
         fil.write(u"\n")
 
-    if isinstance(filename, (str, unicode)):
+    if isinstance(filename, string_types):
         fil.close()
 
 

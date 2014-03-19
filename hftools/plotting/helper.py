@@ -812,7 +812,7 @@ def arrange_figures(layout=None, screen=2, xgap=10,
         x0 = (pylab.get_current_fig_manager().window.winfo_screenwidth() +
               offset)
     if figlist is None:
-        figlist = sorted([x for x in Gcf.figs.iteritems()])
+        figlist = sorted([x for x in Gcf.figs.items()])
 
     x = x0
     y = y0
