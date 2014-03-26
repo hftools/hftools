@@ -206,9 +206,11 @@ class Config(dict):
 
 class SIValue(float):
     def __new__(self, value):
-        value, unit= convert_si_value(value)
+        value, unit = convert_si_value(value)
         self.unit = unit
-        return float.__new__(self, value)
+        x = float.__new__(self, value)
+        x.unit = unit
+        return x
 
 
 def convert_or_none(x):
