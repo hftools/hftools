@@ -85,7 +85,7 @@ class _MultiPortArray(_hfarray):
     _attrfuns = {}
     _Z0 = None
 
-    def __init__(self, data, dims=None, copy=True):
+    def __init__(self, data, dims=None, copy=True, Z0=None):
         data = np.asanyarray(data)
         if (self.shortname is not None) and (data.ndim >= 2):
             self._attrfuns = {}
@@ -98,7 +98,7 @@ class _MultiPortArray(_hfarray):
                         accessor = make_accessor(i, j)
                         self._attrfuns[label] = accessor
 
-        if isinstance(data, self.__class__):
+        if isinstance(data, self.__class__) and self.Z0 == data.Z0:
             pass
         elif isinstance(data, _MultiPortArray):
             if self.ismatrix() and (data.shape[-1] == data.shape[-2]):
@@ -112,7 +112,7 @@ class _MultiPortArray(_hfarray):
                 raise ValueError(msg)
 
     def __new__(subtype, data, dims=None, dtype=None, copy=True, order=None,
-                subok=False, ndmin=0, unit=None, info=None):
+                subok=False, ndmin=0, unit=None, info=None, Z0=None):
 
         if info is not None:
             warnings.warn("_MultiPortArray, use dims not info")
@@ -131,9 +131,10 @@ class _MultiPortArray(_hfarray):
                              for (x, size) in zip(defaultdims, shape))
                 dims = dims + (DimMatrix_i("i", data.shape[-2]),
                                DimMatrix_j("j", data.shape[-1]))
-        return _hfarray.__new__(subtype, data, dims=dims, dtype=dtype,
-                                copy=copy, order=order, subok=subok,
-                                ndmin=ndmin, unit=unit)
+        out = _hfarray.__new__(subtype, data, dims=dims, dtype=dtype,
+                               copy=copy, order=order, subok=subok,
+                               ndmin=ndmin, unit=unit)
+        return out
 
     def ismatrix(self):
         return (self.ndim >= 2 and
@@ -195,7 +196,7 @@ class _TwoPortArray(_MultiPortArray):
     """Basklass som ej skall anvandas direkt
     """
 
-    def __init__(self, data, dims=None, copy=True):
+    def __init__(self, data, dims=None, copy=True, Z0=None):
         if data.shape[-1] != 2:
             raise ValueError("%s must be a 2x2 matrix")
         _MultiPortArray.__init__(self, data, dims, copy=copy)
@@ -296,9 +297,9 @@ This model may be of any dimension.
 """
     shortname = "S"
 
-    def __init__(self, data, dims=None, copy=True):
-        self.Z0 = 50
-        _MultiPortArray.__init__(self, data, dims, copy=copy)
+    def __init__(self, data, dims=None, copy=True, Z0=50.):
+        self.Z0 = Z0
+        _MultiPortArray.__init__(self, data, dims, copy=copy, Z0=Z0)
 
     def get_Z0(self):
         return self._Z0
