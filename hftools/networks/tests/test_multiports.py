@@ -7,15 +7,12 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 import os
-import pdb
-import unittest2 as unittest
 
 import numpy as np
 
 import hftools.dataset.arrayobj as aobj
 import hftools.networks.multiports as mp
-from hftools.testing import TestCase, random_complex_value_array,\
-    random_complex_matrix
+from hftools.testing import TestCase, random_complex_matrix
 
 basepath = os.path.split(__file__)[0]
 
@@ -36,8 +33,8 @@ class _Test_hfarray(TestCase):
                  aobj.DimMatrix_i("i", 3),
                  aobj.DimMatrix_j("j", 3))
         self.b = aobj.hfarray([[[1, 2 + 0j, 3],
-                                   [4, 5, 6],
-                                   [7, 8, 9]]], dims=bdims)
+                                [4, 5, 6],
+                                [7, 8, 9]]], dims=bdims)
 
 
 class Test_TwoPortArray(_Test_hfarray):
@@ -318,6 +315,3 @@ class TestConversions(TestCase):
     def testH(self):
         self._conversion(mp.HArray)
 
-
-if __name__ == '__main__':
-    unittest.main()

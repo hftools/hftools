@@ -1,3 +1,4 @@
+from __future__ import print_function
 #-----------------------------------------------------------------------------
 # Copyright (c) 2014, HFTools Development Team.
 #
@@ -863,5 +864,5 @@ if __name__ == '__main__':
         for i in range(v.ndim):
             r1 = getattr(a, methodname)(axis=i, **kw)
             r2 = getattr(v, methodname)(axis=i, **kw)
-            print i, np.allclose(r1, r2), isinstance(r2, v.__class__)
+            print(i, np.allclose(r1, r2), isinstance(r2, v.__class__))
         return v, a

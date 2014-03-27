@@ -7,10 +7,9 @@
 #-----------------------------------------------------------------------------
 import numpy as np
 import os, pdb
-import unittest2 as unittest
 import hftools.file_formats
 
-from unittest2 import TestCase
+from hftools.testing import TestCase
 
 basepath = os.path.split(__file__)[0]
 
@@ -43,16 +42,16 @@ class TestComment3(TestCase):
                                  "P = 20 mW"])
     def test_1(self):
         self.assertEqual(self.comment.property["Vgs"], [-1])
-        
+
     def test_2(self):
         self.assertEqual(self.comment.property["Vds"], [5.3])
-        
+
     def test_3(self):
         self.assertEqual(self.comment.property["Ig"], [0.3e-6])
-        
+
     def test_4(self):
         self.assertEqual(self.comment.property["Id"], [0.02])
-        
+
     def test_5(self):
         self.assertEqual(self.comment.property["P"], [0.02])
- 
+

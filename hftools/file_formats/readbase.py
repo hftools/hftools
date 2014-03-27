@@ -6,16 +6,19 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
+from __future__ import print_function
+import itertools
+import re
 
-import re, itertools, pdb
 from itertools import chain
 from collections import namedtuple
+
 import numpy as np
+
+import hftools.py3compat as py3
 from hftools.constants import unit_to_multiplier
-from hftools.dataset import DataDict, DataBlock, DimSweep, DimRep, DimPartial,\
-    hfarray, make_matrix
-from hftools.file_formats.common import normalize_names, db_iterator,\
-    make_col_from_matrix, format_complex_header, format_elem
+from hftools.dataset import DataBlock, DimPartial, hfarray, make_matrix
+from hftools.file_formats.common import normalize_names
 from hftools.file_formats import merge_blocks
 from hftools.utils import glob
 from hftools import path
@@ -26,10 +29,12 @@ reg_outerfun = re.compile(r"^([A-Za-z_][A-Za-z_0-9]*)\((.*)\)(.*)")
 class FileFormatError(Exception):
     pass
 
+
 class ParseError(Exception):
     pass
 
 Token = namedtuple("Token", 'tag lineno rad')
+
 
 class Stream(object):
     def __init__(self, stream):
@@ -38,42 +43,49 @@ class Stream(object):
     def __iter__(self):
         return self
 
+    def __next__(self):
+        return next(self.stream)
+
     def next(self):
-        return self.stream.next()
+        return next(self.stream)
 
     def push(self, token):
         self.stream = chain([token], self.stream)
 
+
 def ExpectEndOfFile(stream):
     try:
-        token = stream.next()
-        raise ParseError("Got token %r when expecting end of file"%(token,))
+        token = next(stream)
+        raise ParseError("Got token %r when expecting end of file" % (token, ))
     except StopIteration:
         pass
+
 
 def ManyOptional(name, func=None):
     if func is None:
         func = lambda x: x
+
     def ManyOptional(stream):
         tokens = []
-        current_token = stream.next()
+        current_token = next(stream)
         while current_token.tag == name:
             tokens.append(func(current_token.rad))
             try:
-                current_token = stream.next()
+                current_token = next(stream)
             except StopIteration:
                 return tokens
         stream.push(current_token)
         return tokens
     return ManyOptional
 
+
 def Optional(name, func=None):
     if func is None:
-        func = lambda x:x
+        func = lambda x: x
+
     def Optional(stream):
-        token = None
         try:
-            current_token = stream.next()
+            current_token = next(stream)
         except StopIteration:
             return None
         if current_token.tag == name:
@@ -89,7 +101,7 @@ def OneOf(names, error, func=None):
 
     def One(stream):
         tokens = []
-        current_token = stream.next()
+        current_token = next(stream)
         if current_token.tag in names:
             tokens.append(current_token.rad)
         else:
@@ -113,33 +125,39 @@ def get_outer_function(varname):
 
 
 def make_cplx(dataset):
-    """Inplace conversion in *dataset* of pairs of variables into complex variables.
-    Using the pattern Re(x) & Im(x) -> x, and Re(x) and Im(x) removed from *dataset*.
+    """Inplace conversion in *dataset* of pairs of variables into complex
+    variables. Using the pattern Re(x) & Im(x) -> x, and Re(x) and Im(x)
+    removed from *dataset*.
     """
     varnames = {}
     for vname in dataset.allvarnames:
         outerfunction, varname, rest, fullname = get_outer_function(vname)
-        varnames.setdefault(varname, {})[outerfunction] = (outerfunction, rest, fullname)
+        varnames.setdefault(varname, {})[outerfunction] = (outerfunction,
+                                                           rest, fullname)
 
-    for vname, alt in varnames.iteritems():
+    for vname, alt in varnames.items():
         if "Re" in alt and "Im" in alt:
             if vname in dataset:
-                pass #Already scalar data present
+                pass  # Already scalar data present
             else:
-                dataset[vname] = dataset[alt["Re"][-1]] + dataset[alt["Im"][-1]]*1j
+                dataset[vname] = (dataset[alt["Re"][-1]] +
+                                  dataset[alt["Im"][-1]] * 1j)
                 del dataset[alt["Re"][-1]]
                 del dataset[alt["Im"][-1]]
         elif "Mag" in alt and "Arg" in alt:
             if vname in dataset:
-                pass #Already scalar data present
+                pass  # Already scalar data present
             else:
-                dataset[vname] = dataset[alt["Mag"][-1]] * np.exp(np.pi / 180 * 1j * dataset[alt["Arg"][-1]])
+                dataset[vname] = (dataset[alt["Mag"][-1]] *
+                                  np.exp(np.pi / 180 * 1j *
+                                         dataset[alt["Arg"][-1]]))
                 del dataset[alt["Mag"][-1]]
                 del dataset[alt["Arg"][-1]]
 
     return dataset
 
 reg_varunit = re.compile("(.*?)[ \t]*[[]([a-zA-Z]+)[]]*$")
+
 
 def fix_unit(db, varname):
     res = reg_varunit.match(varname)
@@ -149,15 +167,17 @@ def fix_unit(db, varname):
 #        db.rename(varname, vname)
         if varname in db.ivardata:
             olddim = db.ivardata[varname]
-            newdim = olddim.__class__(olddim, name=vname, data=olddim.data*mul, unit=unit)
+            newdim = olddim.__class__(olddim, name=vname,
+                                      data=olddim.data * mul, unit=unit)
             db.replace_dim(olddim, newdim)
         else:
             db.rename(varname, vname)
             db[vname] = db[vname] * mul
             db[vname].unit = unit
 
+
 def combine_elements_to_matrix(data, name):
-    reg = re.compile("%s([0-9])([0-9])"%name)
+    reg = re.compile("%s([0-9])([0-9])" % name)
     i_idx = set()
     j_idx = set()
     vnames = []
@@ -170,19 +190,25 @@ def combine_elements_to_matrix(data, name):
     if vnames and len(i_idx) * len(j_idx) == len(vnames):
         i_indices = sorted(i_idx)
         j_indices = sorted(j_idx)
-        ex = data["%s%d%d"%(name, list(i_idx)[0], list(j_idx)[0])]
+        ex = data["%s%d%d" % (name, list(i_idx)[0], list(j_idx)[0])]
         shape = ex.shape
-        x = np.empty(shape + (len(i_indices),len(j_indices),), dtype=ex.dtype)
+        x = np.empty(shape + (len(i_indices), len(j_indices), ),
+                     dtype=ex.dtype)
 
         for i, j in itertools.product(i_indices, j_indices):
-            x[..., i_indices.index(i), j_indices.index(j),] = data["%s%d%d"%(name, i, j)]
+            val = data["%s%d%d" % (name, i, j)]
+            x[..., i_indices.index(i), j_indices.index(j), ] = val
+
     else:
-        raise Exception("Can not build complete matrix using elements with name %r"%name)
+        msg = "Can not build complete matrix using elements with name %r"
+        raise Exception(msg % name)
 
     data[name] = make_matrix(np.array(x), dims=ex.dims)
     return data
 
 reg_matrix = re.compile("([A-Za-z_]+)([0-9])([0-9])$")
+
+
 def match_matrix_elements(varnames, elem_matcher):
     possibles = {}
     for elemname in varnames:
@@ -193,11 +219,12 @@ def match_matrix_elements(varnames, elem_matcher):
             j = int(j)
             possibles.setdefault(vname, []).append((i, j, elemname))
     out = {}
-    for vname, elem_tuples in possibles.iteritems():
+    for vname, elem_tuples in possibles.items():
         elems, i, j = _matrix_elements(elem_tuples)
         if elems is not None and len(elems) > 1:
             out[vname] = elems, i, j
     return out
+
 
 def _matrix_elements(elem_tuples):
     i_idx = set()
@@ -213,9 +240,11 @@ def _matrix_elements(elem_tuples):
     else:
         return elems, sorted(i_idx), sorted(j_idx)
 
+
 class ReadFileFormat(object):
-    def __init__(self, make_complex=True, property_to_vars=True, guess_unit=True,
-                       normalize=True, make_matrix=True, merge=True, verbose=False, hyper=False, **kw):
+    def __init__(self, make_complex=True, property_to_vars=True,
+                 guess_unit=True, normalize=True, make_matrix=True,
+                 merge=True, verbose=False, hyper=False, **kw):
         """class to handle file reading of a datafile
         """
 
@@ -233,11 +262,14 @@ class ReadFileFormat(object):
                 setattr(self, name, kw[name])
 
     @classmethod
-    def read_file(cls, filename, make_complex=True, property_to_vars=True, guess_unit=True,
-                       normalize=True, make_matrix=False, merge=True, verbose=False, multiple_files=True,
-                       hyper=False, **kw):
-        obj = cls(make_complex=make_complex, property_to_vars=property_to_vars, guess_unit=guess_unit,
-                  normalize=normalize, make_matrix=make_matrix, merge=merge, verbose=verbose, hyper=hyper, **kw)
+    def read_file(cls, filename, make_complex=True, property_to_vars=True,
+                  guess_unit=True, normalize=True, make_matrix=False,
+                  merge=True, verbose=False, multiple_files=True,
+                  hyper=False, **kw):
+        obj = cls(make_complex=make_complex, property_to_vars=property_to_vars,
+                  guess_unit=guess_unit, normalize=normalize,
+                  make_matrix=make_matrix, merge=merge, verbose=verbose,
+                  hyper=hyper, **kw)
         obj.filename = filename
         if multiple_files:
             if isinstance(filename, (list, tuple)):
@@ -251,16 +283,15 @@ class ReadFileFormat(object):
         filenames = [path(f) for f in filenames]
         objs = []
         if not filenames:
-            raise IOError("Pattern %r did not match any files"%filename)
+            raise IOError("Pattern %r did not match any files" % filename)
         for idx, fname in enumerate(filenames):
             if verbose:
-                print "\r%-80s\r"%fname.basename(),
+                print("\r%-80s\r" % fname.basename(), end="")
             with open(fname) as fil:
                 res = obj.do_file(fil)
                 if multiple_files:
                     #res["FILEINDEX"] = DimPartial("FILEINDEX", [idx])
-                    if isinstance(fname, unicode):
-                        fname = fname.encode("cp1252", "replace")
+                    fname = py3.cast_unicode(fname)
                     if "FILENAME" not in res:
                         res["FILENAME"] = hfarray(fname)
                 objs.append(res)
@@ -269,7 +300,7 @@ class ReadFileFormat(object):
         else:
             res = objs
         if verbose:
-            print "\r%80s\r"%""
+            print("\r%80s\r" % "")
         return res
 
     def do_file(self, stream):
@@ -278,8 +309,9 @@ class ReadFileFormat(object):
         blocks = list(self.parse_blocks(stream_of_block_tokens))
         if not blocks:
             args = "No blocks found in file. Perhaps file is empty"\
-                   " or of the wrong kind. (Tried to parse %s)"%(self.__class__.__name__)
-            raise ParseError(args)
+                   " or of the wrong kind. (Tried to parse %s)"
+            msg = args % (self.__class__.__name__)
+            raise ParseError(msg)
         blocks = self._make_complex(blocks)
         blocks = self._properties_to_vars(blocks)
         blocks = self._guess_unit(blocks)
@@ -290,16 +322,19 @@ class ReadFileFormat(object):
         #import pdb;pdb.set_trace()
         if isinstance(blocks, DataBlock):
             if "FILEINDEX" not in blocks:
-                blocks["FILEINDEX"] = DimPartial("FILEINDEX", [self.file_index])
+                blocks["FILEINDEX"] = DimPartial("FILEINDEX",
+                                                 [self.file_index])
         else:
             for b in blocks.values():
                 if isinstance(b, (list, tuple)):
                     for x in b:
                         if "FILEINDEX" not in x:
-                            x["FILEINDEX"] = DimPartial("FILEINDEX", [self.file_index])
+                            x["FILEINDEX"] = DimPartial("FILEINDEX",
+                                                        [self.file_index])
                 else:
                     if "FILEINDEX" not in b:
-                        b["FILEINDEX"] = DimPartial("FILEINDEX", [self.file_index])
+                        b["FILEINDEX"] = DimPartial("FILEINDEX",
+                                                    [self.file_index])
         self.file_index += 1
         return blocks
 
@@ -342,11 +377,13 @@ class ReadFileFormat(object):
     def _make_matrix_from_block(self, block):
         matrices = {}
         for matcher in self.match_matrix_element_name:
-            matrices.update(match_matrix_elements(block.vardata.keys(), matcher))
-        for vname, (elems, i_indices, j_indices) in matrices.iteritems():
+            matrices.update(match_matrix_elements(block.vardata.keys(),
+                                                  matcher))
+        for vname, (elems, i_indices, j_indices) in matrices.items():
             ex = block[elems[0]]
             shape = ex.shape
-            x = np.empty(shape + (len(i_indices) * len(j_indices),), dtype=ex.dtype)
+            x = np.empty(shape + (len(i_indices) * len(j_indices),),
+                         dtype=ex.dtype)
             for idx, elem in enumerate(elems):
                 x[..., idx] = block[elem]
                 del block[elem]
@@ -385,4 +422,6 @@ class ReadFileFormat(object):
     def combine_blocks(self, blocks):
         pass
 
-    match_matrix_element_name = [re.compile("([A-Za-z_]+)([0-9])([0-9])$").match]
+    reg = re.compile("([A-Za-z_]+)([0-9])([0-9])$")
+    match_matrix_element_name = [reg.match]
+    del reg

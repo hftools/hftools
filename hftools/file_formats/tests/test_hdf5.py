@@ -10,7 +10,7 @@ import h5py
 import hftools.file_formats.hdf5.v_01
 from hftools import path
 from hftools.testing import TestCase
-import base_test
+import hftools.file_formats.tests.base_test as base_test
 from hftools.dataset import DataBlock, hfarray, DimSweep
 from hftools.file_formats.common import Comments
 

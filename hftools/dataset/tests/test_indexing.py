@@ -27,7 +27,7 @@ class TestIndex(TestCase):
         self.I = I = DimSweep("I", [1, 2])
         self.J = J = DimSweep("J", [10, 20, 30])
         self.K = K = DimSweep("K", [100, 200, 300, 400])
-        self.i, self.j, self.k = (i, j, k) = map(hfarray, (I, J, K))
+        self.i, self.j, self.k = (i, j, k) = list(map(hfarray, (I, J, K)))
 
         self.a = i * j * k
         self.b = hfarray(i * j * k, unit="Hz", outputformat="%.3f")
@@ -146,6 +146,6 @@ if __name__ == '__main__':
     I = DimSweep("I", [1, 2])
     J = DimSweep("J", [10, 20, 30])
     K = DimSweep("K", [100, 200, 300, 400])
-    (i, j, k) = map(hfarray, (I, J, K))
+    (i, j, k) = list(map(hfarray, (I, J, K)))
 
     a = i * j * k

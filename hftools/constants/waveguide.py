@@ -46,7 +46,7 @@ WaveGuide = namedtuple("WaveGuide", "EIA RCSC IEC f0 f1 fcl fcu a b")
 WR = dict()
 
 for rad in waveguides.strip().split("\n")[1:]:
-    x = map(to_numeric, rad.split())
+    x = list(map(to_numeric, rad.split()))
     x[-1] *= 25.4
     x[-2] *= 25.4
     x[3] *= 1e9

@@ -6,7 +6,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 import os
-import pdb
+import warnings
 
 import numpy as np
 
@@ -15,6 +15,9 @@ import hftools.constants.si_units as si_units
 from hftools.testing import TestCase, make_load_tests
 from hftools.dataset import hfarray
 
+warnings.resetwarnings()
+
+warnings.simplefilter("error", DeprecationWarning)
 load_tests = make_load_tests(si_units)
 basepath = os.path.split(__file__)[0]
 

@@ -15,6 +15,7 @@ CITI File Format
     .. autofunction:: save_citi
     .. autoexception:: CITIFileError
 """
+from __future__ import print_function
 import re
 
 import numpy as np
@@ -60,7 +61,7 @@ class ReadCITIFileFormat(ReadFileFormat):
         for idx, rad in enumerate(stream):
             lineno = idx + 1
             if self.verbose:
-                print "\r               \r", lineno,
+                print("\r               \r", lineno, end="")
             rad = rad.lstrip()
             if not rad:  # skip empty lines
                 continue
@@ -185,11 +186,11 @@ def format_citi_block(inblock):
         pass
     yield "NAME %s" % block.blockname
 
-    for name, value in block.ivardata.iteritems():
+    for name, value in block.ivardata.items():
         if is_numlike(value.data) and not isinstance(value, _DimMatrix):
             yield "VAR %s MAG %s" % (name, value.data.shape[0])
 
-    for name, value in block.vardata.iteritems():
+    for name, value in block.vardata.items():
         if is_numlike(value):
             if hftools.dataset.ismatrix(value):
                 names = []
@@ -204,7 +205,7 @@ def format_citi_block(inblock):
                 else:
                     yield "DATA %s MAG" % (n)
 
-    for name, value in block.ivardata.iteritems():
+    for name, value in block.ivardata.items():
         if is_numlike(value.data) and not isinstance(value, _DimMatrix):
             yield "VAR_LIST_BEGIN"
             fmt = value.outputformat
@@ -212,7 +213,7 @@ def format_citi_block(inblock):
                 yield fmt % rad
             yield "VAR_LIST_END"
 
-    for name, value in block.vardata.iteritems():
+    for name, value in block.vardata.items():
         if is_numlike(value):
             if hftools.dataset.ismatrix(value):
                 values = []

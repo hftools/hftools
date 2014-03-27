@@ -18,6 +18,7 @@ import matplotlib.cbook as cbook
 import numpy as np
 
 from hftools.core.exceptions import HFToolsWarning, HFToolsDeprecationWarning
+from hftools.py3compat import PY3
 
 
 def reset_hftools_warnings():
@@ -45,15 +46,22 @@ def warn(msg):
 def deprecate(msg):
     warnings.warn(msg, HFToolsDeprecationWarning)
 
+if PY3:
+    def isnumber(x):
+        return isinstance(x, (int,
+                              float,
+                              complex))
 
-def isnumber(x):
-    return isinstance(x, (abc.types.IntType,
-                          abc.types.FloatType,
-                          abc.types.ComplexType))
+    def isrealnumber(x):
+        return isinstance(x, (int, float))
+else:
+    def isnumber(x):
+        return isinstance(x, (abc.types.IntType,
+                              abc.types.FloatType,
+                              abc.types.ComplexType))
 
-
-def isrealnumber(x):
-    return isinstance(x, (abc.types.IntType, abc.types.FloatType))
+    def isrealnumber(x):
+        return isinstance(x, (abc.types.IntType, abc.types.FloatType))
 
 
 def is_numlike(a):
@@ -147,11 +155,11 @@ reg_split = re.compile("[^0-9]+|[0-9]+")
 
 
 def split_num(string):
-    return map(to_numeric, reg_split.findall(string)), string
+    return list(map(to_numeric, reg_split.findall(string))), string
 
 
 def lex_order(lista):
-    ordered = sorted(map(split_num, lista))
+    ordered = sorted(list(map(split_num, lista)))
     return [orig for _, orig in ordered]
 
 

@@ -21,10 +21,11 @@ from numpy import ndarray, array, linspace, arange, newaxis,\
 import numpy.lib.stride_tricks as np_stride_tricks
 
 from hftools.dataset.dim import DimSweep, DimRep, DimMatrix_i, DimMatrix_j,\
-    _DiagAxis, dims_has_complex, CPLX, DimBase, DimAnonymous, DiagAxis
+    _DiagAxis, dims_has_complex, DimBase, DimAnonymous, DiagAxis, CPLX
 from hftools.utils import is_numlike, is_integer, warn, deprecate, isnumber
 from hftools.core import HFArrayShapeDimsMismatchError, HFArrayError,\
     DimensionMismatchError
+from hftools.py3compat import string_types, integer_types
 
 
 def get_new_anonymous_dim(dims, *k, **kw):
@@ -40,7 +41,7 @@ def get_new_anonymous_dim(dims, *k, **kw):
 
 class Dims(tuple):
     def __contains__(self, value):
-        if isinstance(value, (str, unicode)):
+        if isinstance(value, string_types):
             value = DimBase(value, 1)  # Dummy dim
         if not isinstance(value, DimBase):
             return False
@@ -273,7 +274,7 @@ def remove_rep(data, newdimname="AllReps"):
 #    pdb.set_trace()
 
     if order:
-        dims = zip(*order)[1]
+        dims = list(zip(*order))[1]
 
         newdata = data.reorder_dimensions(*(data.dims[:order[0][0]] + dims))
         newdata = hfarray(np.ascontiguousarray(data, dtype=data.dtype),
@@ -477,7 +478,7 @@ class _hfarray(ndarray):
         return self.dims_index(name, cls)
 
     def replace_dim(self, olddim, newdim):
-        if isinstance(olddim, (str, unicode)):
+        if isinstance(olddim, string_types):
             olddim = self.dims_index(olddim)
             olddim = self.dims[olddim]
             if np.issubclass_(newdim, DimBase):
@@ -566,7 +567,7 @@ class _hfarray(ndarray):
         ellipsis_and_ints = True
         orig_indices = indices
         for i in indices:
-            if isinstance(i, int) or i is Ellipsis:
+            if isinstance(i, integer_types) or i is Ellipsis:
                 pass
             else:
                 ellipsis_and_ints = False
@@ -613,7 +614,7 @@ class _hfarray(ndarray):
             dim_in_indices = dict((x.dims[0].name, x.dims[0]) for x in indices
                                   if isinstance(x, hfarray))
             for idx, dim in zip(indices, self.dims):
-                if isinstance(idx, int):
+                if isinstance(idx, integer_types):
                     continue
                 elif isinstance(idx, slice):
                     dims.append(dim[idx])
@@ -663,6 +664,10 @@ class _hfarray(ndarray):
         return ndarray.__div__(self, other)
 
     @check_instance
+    def __truediv__(self, other):
+        return ndarray.__truediv__(self, other)
+
+    @check_instance
     def __pow__(self, other):
         return ndarray.__pow__(self, other)
 
@@ -699,6 +704,10 @@ class _hfarray(ndarray):
 
     @check_instance
     def __rdiv__(self, other):
+        return np.divide(other, self)
+
+    @check_instance
+    def __rtruediv__(self, other):
         return np.divide(other, self)
 
     @check_instance
@@ -867,9 +876,9 @@ class _hfarray(ndarray):
 def axis_handler(a, axis):
     if axis is None:
         return None
-    elif isinstance(axis, int):
+    elif isinstance(axis, integer_types):
         return a.dims[axis]
-    if isinstance(axis, (str, unicode)):
+    if isinstance(axis, string_types):
         i = a.dims_index(axis)
         axis = a.dims[i]
 
@@ -903,11 +912,11 @@ def multiple_axis_handler(a, axis):
     outaxis = []
     outidx = []
     for ax in axis:
-        if isinstance(ax, int):
+        if isinstance(ax, integer_types):
             outaxis.append(a.dims[ax])
             outidx.append(ax)
             continue
-        if isinstance(ax, (str, unicode)):
+        if isinstance(ax, string_types):
             i = a.dims_index(ax)
             ax = a.dims[i]
         if isinstance(ax, type) and issubclass(ax, DimBase):

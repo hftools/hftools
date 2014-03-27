@@ -9,7 +9,7 @@
 from hftools.dataset.dim import DimSweep, DimRep,\
     DimMatrix_i, DimMatrix_j, _DimMatrix, DerivAxis, IndepAxis, DiagAxis, \
     ComplexDerivAxis, ComplexIndepAxis, ComplexDiagAxis, dims_has_complex,\
-    CPLX, DimPartial, DimBase
+    DimPartial, DimBase, CPLX
 
 from hftools.dataset.arrayobj import make_matrix, hfarray, ismatrix,\
     make_same_dims, make_same_dims_list, change_shape, remove_tail,\

@@ -7,7 +7,6 @@
 #-----------------------------------------------------------------------------
 import numpy as np
 import os, pdb
-import unittest2 as unittest
 
 from hftools.testing import TestCase
 
@@ -51,8 +50,8 @@ class Test_Comment_1(Test_1):
     def setUp(self):
         Test_1.setUp(self)
         self.comments = ["Vgs [V]= -1",
-                         "Vds [V]= 5.3", 
-                         "Ig [uA]= 0.3", 
+                         "Vds [V]= 5.3",
+                         "Ig [uA]= 0.3",
                          "Id [mA]= 20",
                         ]
     def test_prop(self):
@@ -67,8 +66,8 @@ class Test_Comment_2(Test_1):
     def setUp(self):
         Test_1.setUp(self)
         self.comments = ["Vgs [V]= -1",
-                         "Vds [V]= 5.3", 
-                         "Ig [uA]= 0.3", 
+                         "Vds [V]= 5.3",
+                         "Ig [uA]= 0.3",
                          "Id [mA]= 20",
                         ]
     def test_prop(self):
@@ -77,7 +76,3 @@ class Test_Comment_2(Test_1):
         self.assertRaises(KeyError, lambda x:self.block[x], "Ig", )
         self.assertRaises(KeyError, lambda x:self.block[x], "Id", )
 
-
-if __name__ == '__main__':
-    unittest.main()
-    

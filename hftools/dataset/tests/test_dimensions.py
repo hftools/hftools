@@ -6,12 +6,9 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 import os
-import pdb
-import unittest2 as unittest
 
 import numpy as np
 
-import hftools.dataset.dim
 import hftools.dataset.dim as ddim
 
 from hftools.dataset.dim import DimSweep, ComplexDiagAxis, ComplexIndepAxis,\
@@ -141,7 +138,7 @@ class Test_Dim(TestCase):
     def test_get_3(self):
         a = self.cls("a", 10, unit="Hz")
         b = a[np.arange(10) < 5]
-        self.assertEqual(b.data.tolist(), range(5))
+        self.assertEqual(b.data.tolist(), list(range(5)))
         self.assertEqual(b.unit, a.unit)
         self.assertEqual(b.name, a.name)
 
@@ -298,7 +295,8 @@ class Object:
 
 class TestDate(TestCase):
     def test_date_1(self):
-        res = np.array(["2012-05-30 12:12:31", "2012-05-31 12:12:31"], np.dtype("datetime64[us]"))
+        res = np.array(["2012-05-30 12:12:31", "2012-05-31 12:12:31"],
+                       np.dtype("datetime64[us]"))
         d = DimSweep("a", res)
         self.assertEqual(d.data.dtype, np.dtype("datetime64[us]"))
 

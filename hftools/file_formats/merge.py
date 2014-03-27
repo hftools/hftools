@@ -26,7 +26,7 @@ def merge_blocks_to_association_list(blocks):
     # For each variable add a dictionary that is indexed by the DimPartials
     for b in blocks:
         coord = []
-        for name, dim in b.ivardata.iteritems():
+        for name, dim in b.ivardata.items():
             if isinstance(dim, DimPartial):
                 coord.append((name, array(dim.data)[0]))
         coord.sort()
@@ -110,18 +110,18 @@ def merge_blocks_do_hyper(blocks):
 
     ivars = {}
     for b in blocks:
-        for vname, v in b.ivardata.iteritems():
+        for vname, v in b.ivardata.items():
             if vname not in ivars:
                 ivars[vname] = v
 
     free_vars = set()
-    for vname, assoc in data.iteritems():
+    for vname, assoc in data.items():
         free_vars.add(zip(*assoc)[0])
     free_vars = list(free_vars)
-    for vname, assoc in data.iteritems():
+    for vname, assoc in data.items():
         v, indexvars, dim = merge_variable(assoc)
         outdata[vname] = v
-        for iname, value in indexvars.iteritems():
+        for iname, value in indexvars.items():
             outdata.ivardata[iname] = value.dims[0]
 
     for v in outdata.vardata.keys():
@@ -140,7 +140,7 @@ def merge_blocks_do_hyper(blocks):
     outdata.comments = cmt
     outdata.blockname = blocks[0].blockname
 
-    for vname, v in ivars.iteritems():
+    for vname, v in ivars.items():
         if vname not in outdata:
             outdata[vname] = v
     #import pdb;pdb.set_trace()
@@ -169,7 +169,7 @@ def merge_blocks(blocks, hyper=False, indexed=False):
         for k, v in dims.items():
             dims = (DimSweep("INDEX%s" % idx, len(v)),)
             db[k] = hfarray([x.data[0] for x in v],
-                            dims=dims, unit=x.unit)
+                            dims=dims, unit=v[0].unit)
 
     varnames = set()
     for b in blocks:
@@ -189,7 +189,7 @@ def merge_blocks(blocks, hyper=False, indexed=False):
         if v:
             k = tuple(partials.keys())
             if k:
-                ri = (db[dimpartialgroups[k].keys()[0]].dims[0],)
+                ri = (db[tuple(dimpartialgroups[k].keys())[0]].dims[0],)
             else:
                 ri = tuple()
             value = hfarray(v, dims=ri + v[0].dims, unit=v[0].unit)

@@ -6,8 +6,6 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 import os
-import pdb
-import unittest2 as unittest
 
 import numpy as np
 
@@ -118,5 +116,3 @@ class Test_deembed(TestCase):
         r = spfun.deembed(self.b, self.c, self.b)
         self.assertAllclose(r,  make_array([[[0.025, 0j], [0, 0.025]]]))
 
-if __name__ == '__main__':
-    unittest.main()

@@ -6,6 +6,7 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
+from __future__ import unicode_literals
 import abc
 import imp
 import re
@@ -34,16 +35,12 @@ siunit_names = ["Hz", "s", "S", "Ohm", "m", "V", "A", "F", "W"]
 siunits = imp.new_module("siunits")
 
 for u in siunit_names:
-    for p, val in siprefixes.iteritems():
+    for p, val in siprefixes.items():
         setattr(siunits, p + u, val)
 
 
 def unit_to_multiplier(unit):
     """Convert a unit to multiplier with baseunit
-        >>> unit_to_multiplier("ms")
-        (0.001, 's')
-        >>> unit_to_multiplier("GHz")
-        (1000000000.0, 'Hz')
     """
     unit = unit.strip()
     if len(unit) == 1:
@@ -97,14 +94,6 @@ def convert_with_unit(unit, value):
 
 
 def _help_format_sci(value, digs):
-    """
-    >>> "%.4f, %d"%_help_format_sci(1.2345,2)
-    '1.2345, 0'
-    >>> "%.4f, %d"%_help_format_sci(1.2345e5,2)
-    '123.4500, 3'
-    >>> "%.4f, %d"%_help_format_sci(-1.2345e5,2)
-    '-123.4500, 3'
-    """
     m, e = mantissa(value)
     mul = e % 3
     if (e >= 0 and e < 3):
@@ -114,20 +103,6 @@ def _help_format_sci(value, digs):
 
 def mantissa(x):
     u"""Berakna mantissa och exponent av *x*
-
-        >>> mantissa(125)
-        (1.25, 2.0)
-        >>> mantissa(0.0125)
-        (1.25, -2.0)
-        >>> mantissa(0.0)
-        (0.0, 0.0)
-        >>> mantissa(-125)
-        (-1.25, 2.0)
-        >>> mantissa(-0.0125)
-        (-1.25, -2.0)
-        >>> mantissa(0.0)
-        (0.0, 0.0)
-
     """
     if x == 0:
         return 0., 0.

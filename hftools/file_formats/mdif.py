@@ -15,7 +15,7 @@ MDIF
     .. autoclass:: MDIFBunch
 
 """
-
+from __future__ import print_function
 import re
 import itertools
 import time
@@ -133,7 +133,7 @@ class ReadMDIFFileFormat(ReadFileFormat):
         for idx, fname in enumerate(filenames):
             with open(fname) as fil:
                 res = obj.do_file(fil)
-                for k, v in res.iteritems():
+                for k, v in res.items():
                     if isinstance(v, list):
                         for a in v:
                             a["FILENAME"] = hfarray(fname)
@@ -144,7 +144,7 @@ class ReadMDIFFileFormat(ReadFileFormat):
 
         if multiple_files:
             res = {}
-            for k, v in objs.iteritems():
+            for k, v in objs.items():
                 res[k] = simple_merge_blocks(v)
                 res[k].guess_units()
         else:
@@ -174,7 +174,7 @@ class ReadMDIFFileFormat(ReadFileFormat):
         for idx, line in enumerate(stream):
             lineno = idx + 1
             if self.verbose:
-                print "\r               \r", lineno,
+                print("\r               \r", lineno, end="")
             line = line.lstrip()
             if not line:
                 continue
@@ -273,7 +273,7 @@ class ReadMDIFFileFormat(ReadFileFormat):
 
     def make_matrices(self, db, header):
         matrices, vectors, scalars = match_matrix_names(header)
-        for matrix, value in matrices.iteritems():
+        for matrix, value in matrices.items():
             a = [(i, j) for x, i, j, y in value]
             a.sort()
             arrays = []
@@ -292,7 +292,7 @@ class ReadMDIFFileFormat(ReadFileFormat):
             del db.vardata.order[db.vardata.order.index(matrix)]
             db.vardata.order.insert(idx, matrix)
 
-        for matrix, value in vectors.iteritems():
+        for matrix, value in vectors.items():
             a = [(i,) for x, i, y in value]
             a.sort()
             fmt = "%s[%%s]" % (matrix, )
@@ -383,7 +383,7 @@ def match_matrix_names(header):
     for v in header:
         m = reg_matrix.match(v)
         if not m:
-            print "%s not a valid variable" % v
+            print("%s not a valid variable" % v)
         else:
             vname, x, i, matrixp, j, vtype = m.groups()
             if x and matrixp:

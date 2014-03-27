@@ -228,10 +228,10 @@ class UnitFormatter(FormatStrFormatter):
                 fmt = fmt.replace("[]", u"[%(prefix)sU]")
         elif "[^]" in fmt:
             if self.get_label_unit():
-                fmt = fmt.replace("[^]", ur"$[10^{{%%(powerprefix).0f" +
-                                  ur"\rm{{{unit}}}}]$")
+                fmt = fmt.replace("[^]", u"$[10^{{%%(powerprefix).0f" +
+                                  u"\\rm{{{unit}}}}]$")
             else:
-                fmt = fmt.replace("[^]", ur"$[10^{{%(powerprefix).0f}}]$")
+                fmt = fmt.replace("[^]", u"$[10^{{%(powerprefix).0f}}]$")
         if "{unit}" in fmt or "{default}" in fmt:
             dct = self.get_label_name_and_unit()
             fmt = fmt.format(**dct)
@@ -812,7 +812,7 @@ def arrange_figures(layout=None, screen=2, xgap=10,
         x0 = (pylab.get_current_fig_manager().window.winfo_screenwidth() +
               offset)
     if figlist is None:
-        figlist = sorted([x for x in Gcf.figs.iteritems()])
+        figlist = sorted([x for x in Gcf.figs.items()])
 
     x = x0
     y = y0

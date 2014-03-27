@@ -100,7 +100,7 @@ def reorder(m):
 
 def build_data(data):
     out = build_meas_state(data)
-    for k, v in build_measmnt(data).iteritems():
+    for k, v in build_measmnt(data).items():
         out[k] = hfarray(v)
 
     data = data["data"][0, 0]
@@ -125,15 +125,15 @@ def build_data(data):
         Scov = make_matrix(Scov[0]["mtrx"][0].transpose((2,0,1)), (freq,))
         out["%scov"%type] = Scov
 
-    for k,v in out.vardata.iteritems():
+    for k,v in out.vardata.items():
         if k in ["V1", "V2", "V1_SET", "V2_SET"]:
             v.unit = "V"
 
-    for k,v in out.vardata.iteritems():
+    for k,v in out.vardata.items():
         if k in ["I1", "I2", "I1_SET", "I2_SET"]:
             v.unit = "A"
 
-    for k,v in out.vardata.iteritems():
+    for k,v in out.vardata.items():
         if k in ["Z0"]:
             v.unit = "Ohm"
     return out

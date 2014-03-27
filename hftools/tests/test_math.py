@@ -331,7 +331,7 @@ class TestInv(TestCase):
         self.K = K = DimSweep("K", [100, 200, 300, 400])
         self.mi = mi = DimMatrix_i("i", [0, 1])
         self.mj = mj = DimMatrix_j("j", [0, 1])
-        self.i, self.j, self.k = (i, j, k) = map(hfarray, (I, J, K))
+        self.i, self.j, self.k = (i, j, k) = list(map(hfarray, (I, J, K)))
 
         self.a = i * j * k
         self.b = hfarray(i * j * k, unit="Hz", outputformat="%.3f")
