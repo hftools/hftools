@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+#
+# DO NOT IMPORT ANYTHING FROM HFTOOLS HERE
+# IMPORTING HFTOOLS AFFECTS COVERAGE MEASUREMENTs
 from __future__ import print_function
 import os
 import sys
-from hftools.py3compat import PY3
 
-if PY3:
+if sys.version_info[0] >= 3:
     import unittest
 else:
     import unittest2 as unittest
