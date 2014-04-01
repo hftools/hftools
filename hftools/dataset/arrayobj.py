@@ -348,7 +348,7 @@ def check_instance(func):
         if isnumber(other):
             a, b = self, other
         else:
-            a, b = make_same_dims(self, hfarray(other))
+            a, b = make_same_dims(self, self.__class__(other))
         return func(a, b)
     return a
 
@@ -413,8 +413,12 @@ class _hfarray(ndarray):
                 subarr.outputformat = "%d"
             elif is_numlike(subarr):
                 subarr.outputformat = "%.16e"
+            elif np.issubdtype(subarr.dtype, "datetime64"):
+                subarr.outputformat = "%s"
             else:
                 subarr.outputformat = "%s"
+
+
         # Finally, we must return the newly created object:
         if unit is None and hasattr(data, "unit"):
             subarr.__dict__["unit"] = data.unit
