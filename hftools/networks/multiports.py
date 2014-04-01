@@ -101,6 +101,10 @@ class _MultiPortArray(_hfarray):
         if isinstance(data, self.__class__) and self.Z0 == data.Z0:
             pass
         elif isinstance(data, _MultiPortArray):
+            if Z0 is None:
+                self.Z0 = getattr(data, "Z0", None)
+            else:
+                self.Z0 = Z0
             if self.ismatrix() and (data.shape[-1] == data.shape[-2]):
                 view = data.view(type=hfarray, dtype=data.dtype)
                 res, _, _ = convert(data.P, self.P, view)
@@ -110,6 +114,14 @@ class _MultiPortArray(_hfarray):
                        "elements of a %s matrix")
                 msg = fmt % (data.__class__.__name__, self.__class__.__name__)
                 raise ValueError(msg)
+
+    @property
+    def Z0(self):
+        return self._Z0
+
+    @Z0.setter
+    def Z0(self, Z0):
+        self._Z0 = Z0
 
     def __new__(subtype, data, dims=None, dtype=None, copy=True, order=None,
                 subok=False, ndmin=0, unit=None, info=None, Z0=None):
@@ -135,6 +147,17 @@ class _MultiPortArray(_hfarray):
                                copy=copy, order=order, subok=subok,
                                ndmin=ndmin, unit=unit)
         return out
+
+    def __array_finalize__(self, obj):
+        _hfarray.__array_finalize__(self, obj)
+        self.Z0 = getattr(obj, "Z0", 50.)
+
+    def view(self, dtype=None, type=None):
+        if type is None:
+            x = np.ndarray.view(self, dtype=self.dtype)
+            return self.__class__(x, dims=self.dims, copy=False, Z0=self.Z0)
+        else:
+            return np.ndarray.view(self, dtype=self.dtype, type=type)
 
     def ismatrix(self):
         return (self.ndim >= 2 and
@@ -197,9 +220,10 @@ class _TwoPortArray(_MultiPortArray):
     """
 
     def __init__(self, data, dims=None, copy=True, Z0=None):
+        data = np.asanyarray(data)
         if data.shape[-1] != 2:
             raise ValueError("%s must be a 2x2 matrix")
-        _MultiPortArray.__init__(self, data, dims, copy=copy)
+        _MultiPortArray.__init__(self, data, dims, copy=copy, Z0=Z0)
 
 
 def make_matrix(A):
@@ -233,13 +257,16 @@ This model may be of any dimension.
 
     def __init__(self, data, dims=None, copy=True):
         data = np.asanyarray(data)
-        self.P = make_matrix(identity(data.shape[-1] * 2))
         if isinstance(data, YArray) and data.ismatrix():
             if data.shape[-1] != data.shape[-2]:
                 raise ValueError("%s must be a square matrix" % self.shortname)
             data = _hfarray(inv(data))
             self[:] = data
         _MultiPortArray.__init__(self, data, dims, copy=copy)
+
+    @property
+    def P(self):
+        return make_matrix(identity(self.shape[-1] * 2))
 
 
 class YArray(_MultiPortArray):
@@ -265,15 +292,20 @@ This model may be of any dimension.
     shortname = "Y"
 
     def __init__(self, data, dims=None, copy=True):
-        i = identity(data.shape[-1])
-        o = zeros_like(i)
-        self.P = make_matrix(bmat([[o, i], [i, o]]))
+        data = np.asanyarray(data)
         if isinstance(data, ZArray):
             if data.shape[-1] != data.shape[-2]:
                 raise ValueError("%s must be a square matrix" % self.shortname)
             data = _hfarray(inv(data))
             self[:] = data
         _MultiPortArray.__init__(self, data, dims, copy=copy)
+
+    @property
+    def P(self):
+        i = identity(self.shape[-1])
+        o = zeros_like(i)
+        P = make_matrix(bmat([[o, i], [i, o]]))
+        return P
 
 
 class SArray(_MultiPortArray):
@@ -298,18 +330,23 @@ This model may be of any dimension.
     shortname = "S"
 
     def __init__(self, data, dims=None, copy=True, Z0=50.):
-        self.Z0 = Z0
         _MultiPortArray.__init__(self, data, dims, copy=copy, Z0=Z0)
 
-    def get_Z0(self):
+    @property
+    def Z0(self):
         return self._Z0
 
-    def set_Z0(self, Z0):
+    @Z0.setter
+    def Z0(self, Z0):
         self._Z0 = Z0
+
+    @property
+    def P(self):
+        Z0 = self.Z0
         v = diag([sqrt(1. / Z0) / 2.] * self.shape[-1])
         i = diag([sqrt(Z0) / 2.] * self.shape[-1])
-        self.P = make_matrix(bmat([[v, -i], [v, i]]))
-    Z0 = property(get_Z0, set_Z0)
+        P = make_matrix(bmat([[v, -i], [v, i]]))
+        return P
 
 
 class GArray(_TwoPortArray):
@@ -334,12 +371,16 @@ This model may be of any dimension.
     shortname = "G"
 
     def __init__(self, data, dims=None, copy=True):
-        self.P = array([[0, 0, 1, 0],
-                        [0, 1, 0, 0],
-                        [1, 0, 0, 0],
-                        [0, 0, 0, 1.]])
-        self.P = make_matrix(self.P)
         _TwoPortArray.__init__(self, data, dims, copy=copy)
+
+    @property
+    def P(self):
+        P = array([[0, 0, 1, 0],
+                   [0, 1, 0, 0],
+                   [1, 0, 0, 0],
+                   [0, 0, 0, 1.]])
+        P = make_matrix(P)
+        return P
 
 
 class HArray(_TwoPortArray):
@@ -364,12 +405,16 @@ This model is only valid for a twoport
     shortname = "H"
 
     def __init__(self, data, dims=None, copy=True):
-        self.P = make_matrix(array([[1, 0, 0, 0],
-                                    [0, 0, 0, 1],
-                                    [0, 0, 1, 0],
-                                    [0, 1, 0, 0.]]))
-        self.P = make_matrix(self.P)
         _TwoPortArray.__init__(self, data, dims, copy=copy)
+
+    @property
+    def P(self):
+        P = array([[1, 0, 0, 0],
+                   [0, 0, 0, 1],
+                   [0, 0, 1, 0],
+                   [0, 1, 0, 0.]])
+        P = make_matrix(P)
+        return P
 
 
 class ABCDArray(_TwoPortArray):
@@ -393,12 +438,16 @@ This model is only valid for a twoport
     shortname = "A"
 
     def __init__(self, data, dims=None, copy=True):
-        self.P = array([[1, 0, 0, 0],
-                        [0, 0, 1, 0],
-                        [0, 1, 0, 0],
-                        [0, 0, 0, -1.]])
-        self.P = make_matrix(self.P)
         _TwoPortArray.__init__(self, data, dims, copy=copy)
+
+    @property
+    def P(self):
+        P = array([[1, 0, 0, 0],
+                   [0, 0, 1, 0],
+                   [0, 1, 0, 0],
+                   [0, 0, 0, -1.]])
+        P = make_matrix(P)
+        return P
 
 
 class TArray(_TwoPortArray):
@@ -426,22 +475,19 @@ This model may be of any dimension.
         self.Z0 = 50
         _TwoPortArray.__init__(self, data, dims, copy=copy)
 
-    def get_Z0(self):
-        return self._Z0
-
-    def set_Z0(self, Z0):
-        self._Z0 = Z0
-        Z1 = Z2 = Z0
+    @property
+    def P(self):
+        Z1 = Z2 = self.Z0
         v1 = sqrt(1. / Z1) / 2.
         v2 = sqrt(1. / Z2) / 2.
         i1 = sqrt(Z1) / 2.
         i2 = sqrt(Z2) / 2.
-        self.P = array([[v1, 0, -i1, 0],
-                        [v1, 0, i1, 0],
-                        [0, v2, 0, i2],
-                        [0, v2, 0, -i2]])
-        self.P = make_matrix(self.P)
-    Z0 = property(get_Z0, set_Z0)
+        P = array([[v1, 0, -i1, 0],
+                   [v1, 0, i1, 0],
+                   [0, v2, 0, i2],
+                   [0, v2, 0, -i2]])
+        P = make_matrix(P)
+        return P
 
 
 class TpArray(_TwoPortArray):
@@ -469,22 +515,19 @@ This model is only valid for a twoport
         self.Z0 = 50
         _TwoPortArray.__init__(self, data, dims, copy=copy)
 
-    def get_Z0(self):
-        return self._Z0
-
-    def set_Z0(self, Z0):
-        self._Z0 = Z0
-        Z1 = Z2 = Z0
+    @property
+    def P(self):
+        Z1 = Z2 = self.Z0
         v1 = sqrt(1. / Z1) / 2.
         v2 = sqrt(1. / Z2) / 2.
         i1 = sqrt(Z1) / 2.
         i2 = sqrt(Z2) / 2.
-        self.P = array([[v1, 0, i1, 0],
-                        [v1, 0, -i1, 0],
-                        [0, v2, 0, -i2],
-                        [0, v2, 0, i2]])
-        self.P = make_matrix(self.P)
-    Z0 = property(get_Z0, set_Z0)
+        P = array([[v1, 0, i1, 0],
+                   [v1, 0, -i1, 0],
+                   [0, v2, 0, -i2],
+                   [0, v2, 0, i2]])
+        P = make_matrix(P)
+        return P
 
 
 def unit_matrix(size=2, cls=SArray):
