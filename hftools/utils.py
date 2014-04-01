@@ -14,7 +14,6 @@ import re
 import warnings
 
 
-import matplotlib.cbook as cbook
 import numpy as np
 
 from hftools.core.exceptions import HFToolsWarning, HFToolsDeprecationWarning
@@ -66,9 +65,9 @@ else:
 
 def is_numlike(a):
     if isinstance(a, np.ndarray):
-        return cbook.is_numlike(np.array(a, copy=False))
+        return np.issubdtype(a.dtype, np.number)
     else:
-        return cbook.is_numlike(a)
+        return np.issubdtype(np.array(a).dtype, np.number)
 
 
 def is_integer(a):
