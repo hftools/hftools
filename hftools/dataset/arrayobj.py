@@ -402,7 +402,7 @@ class _hfarray(ndarray):
                 raise DimensionMismatchError(msg)
 
         subarr._dims = Dims(dims)
-        #Check to see that dims matches shape
+        # Check to see that dims matches shape
         subarr.verify_dimension()
         if outputformat is not None:
             subarr.outputformat = outputformat
@@ -417,7 +417,6 @@ class _hfarray(ndarray):
                 subarr.outputformat = "%s"
             else:
                 subarr.outputformat = "%s"
-
 
         # Finally, we must return the newly created object:
         if unit is None and hasattr(data, "unit"):
@@ -528,6 +527,37 @@ class _hfarray(ndarray):
     @property
     def T(self):
         return self.transpose()
+
+    @property
+    def t(self):
+        """transpose dimensions indicated by DimMatrix_i and DimMatrix_j
+
+        The position of the dimensions will be kept but the data will be
+        transposed.
+
+        The dimensions will be transformed like:
+        (..., DimMatrix_i("i", [1, 2, 3]), DimMatrix_j("j", [1, 2]),) =>
+        (..., DimMatrix_i("i", [1, 2]), DimMatrix_j("j", [1, 2, 3]),) =>
+        """
+        di = None
+        dj = None
+        for dim in self.dims:
+            if isinstance(dim, DimMatrix_i):
+                di = dim
+            elif isinstance(dim, DimMatrix_j):
+                dj = dim
+        if di is None or dj is None:
+            return self
+        i = self.dims_index(di)
+        j = self.dims_index(dj)
+        order = list(range(self.ndim))
+        order[i], order[j] = order[j], order[i]
+        out = self.transpose(*order)
+        newdims = list(out.dims)
+        newdims[i], newdims[j], = (DimMatrix_i(di.name, dj.data),
+                                   DimMatrix_j(dj.name, di.data))
+        out.dims = Dims(newdims)
+        return out
 
     def squeeze(self, axis=None):
         u"""Remove single-dimensional entries from the shape of an array.
