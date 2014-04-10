@@ -559,6 +559,19 @@ class _hfarray(ndarray):
         out.dims = Dims(newdims)
         return out
 
+    def take(self, indices, axis=None, out=None, mode="raise"):
+        if axis is None:
+            data = np.ndarray.take(self, indices, axis, out, mode)
+            return hfarray(data, dims=(DimAnonymous("anon1", indices), ))
+        axis = self.dims_index(axis_handler(self, axis))
+        olddim = self.dims[axis]
+        newdim = olddim.__class__(olddim.name, indices)
+        data = np.ndarray.take(self, indices, axis, out, mode)
+        newdims = list(self.dims)
+        newdims[axis] = newdim
+        data.dims = Dims(newdims)
+        return data
+
     def squeeze(self, axis=None):
         u"""Remove single-dimensional entries from the shape of an array.
 
