@@ -919,6 +919,19 @@ class _hfarray(ndarray):
                          )
         return out
 
+    def add_dim(self, dim, axis=0):
+        if dim is None:
+            return self
+        if dim in self.dims:
+            return self
+        axis = min(axis, self.ndim)
+        out = self[(slice(None), ) * axis + (None, )]
+        if len(dim.data) > 1:
+            out = out.repeat(len(dim.data), axis)
+        dims = list(self.dims)
+        dims.insert(axis, dim)
+        return self.__class__(out, dims=dims, copy=False)
+
 
 def axis_handler(a, axis):
     if axis is None:
