@@ -158,4 +158,5 @@ def append_hdf5(db, filehandle, expanddim=None, **kw):
         diskdata = filehandle[k]
         ax = diskdata.maxshape.index(None)
         expand_dataset(diskdata, 1, ax)
-        diskdata.value.take(-1, ax)[...] = db[k]
+        s = (slice(None),) * ax + (diskdata.shape[ax] - 1,)
+        diskdata[s] = db[k]
