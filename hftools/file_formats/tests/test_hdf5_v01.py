@@ -173,12 +173,21 @@ class Test_hdf5_data_save(TestCase):
     def test_9(self):
         d = DataBlock()
         d.comments = Comments(["Hej=10"])
-#        import pdb;pdb.set_trace()
         d.b = hfarray([2], dims=(DimSweep("a", 1), ), unit="V")
         fname = testpath / "testdata/hdf5/v01/savetest/res_9.hdf5"
         savefun(d, fname)
         d2 = readfun(fname)
         self.assertEqual(d2.b.unit, "V")
+        fname.unlink()
+
+    def test_10(self):
+        d = DataBlock()
+        d.blockname = "Foo"
+        d.b = hfarray([2], dims=(DimSweep("a", 1), ), unit="V")
+        fname = testpath / "testdata/hdf5/v01/savetest/res_9.hdf5"
+        savefun(d, fname)
+        d2 = readfun(fname)
+        self.assertEqual(d2.blockname, "Foo")
         fname.unlink()
 
 

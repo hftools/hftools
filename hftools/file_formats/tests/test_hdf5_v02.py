@@ -14,7 +14,8 @@ from hftools.testing import TestCase
 import hftools.file_formats.tests.base_test as base_test
 from hftools.dataset import DataBlock, hfarray, DimSweep
 from hftools.file_formats.common import Comments
-
+from hftools.file_formats.hdf5.v_02 import append_hdf5
+from hftools.file_formats.hdf5.helper import hdf5context
 testpath = path(__file__).dirname()
 
 
@@ -168,6 +169,35 @@ class Test_hdf5_data_save(TestCase):
         savefun(d, fname)
         d2 = readfun(fname)
         self.assertEqual(d2.b.unit, "V")
+        fname.unlink()
+
+
+class Test_hdf5_data_expandable(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        p = path(testpath / "testdata/hdf5/v02/savetest")
+        if not p.exists():  # pragma: no cover
+            p.makedirs()
+
+    @classmethod
+    def tearDownClass(cls):
+        p = path(testpath / "testdata/hdf5/v02/savetest")
+        p.removedirs()
+
+    def test_1(self):
+        i1 = DimSweep("a", 1)
+        i2 = DimSweep("INDEX", 2)
+        d1 = DataBlock()
+        d1.b = hfarray([2], dims=(DimSweep("a", 1),))
+        d2 = DataBlock()
+        d2.b = hfarray([3], dims=(DimSweep("a", 1),))
+        fname = testpath / "testdata/hdf5/v02/savetest/res_1.hdf5"
+        with hdf5context(fname, mode="w") as fil:
+            savefun(d1, fil, expandable=True)
+            append_hdf5(d2, fil)
+        d = readfun(fname)
+        self.assertAllclose(hfarray([[2, 3]], dims=(i1, i2)), d.b)
+
         fname.unlink()
 
 
