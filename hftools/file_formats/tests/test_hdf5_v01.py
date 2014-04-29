@@ -24,7 +24,7 @@ savefun = hftools.file_formats.hdf5.v_01.save_hdf5
 class Test_hdf5_data_1(base_test.Test_1):
     readfun = [readfun]
     basepath = testpath
-    dirname = "hdf5"
+    dirname = "hdf5/v01"
     extension = ".hdf5"
     readpars = dict(verbose=False)
 
@@ -32,7 +32,7 @@ class Test_hdf5_data_1(base_test.Test_1):
 class Test_hdf5_data_1b(base_test.Test_1):
     readfun = [readfun]
     basepath = testpath
-    dirname = "hdf5"
+    dirname = "hdf5/v01"
     extension = ".hdf5"
     filename = "test1b"
     readpars = dict(verbose=False)
@@ -40,15 +40,15 @@ class Test_hdf5_data_1b(base_test.Test_1):
 
 class Test_hdf5_specific(TestCase):
     def test_both(self):
-        d1 = readfun(testpath / "testdata/hdf5/test1.hdf5")
-        with h5py.File(testpath / "testdata/hdf5/test1.hdf5", "r") as fil:
+        d1 = readfun(testpath / "testdata/hdf5/v01/test1.hdf5")
+        with h5py.File(testpath / "testdata/hdf5/v01/test1.hdf5", "r") as fil:
             d2 = readfun(fil)
         self.assertAllclose(d1.S, d2.S)
 
     def test_none(self):
         db = DataBlock()
         db.x = hfarray(1)
-        fname = testpath / "testdata/hdf5/slask.hdf5"
+        fname = testpath / "testdata/hdf5/v01/slask.hdf5"
         savefun(db, fname)
         db = readfun(fname)
         self.assertIsNone(db.blockname)
@@ -61,33 +61,33 @@ class Test_hdf5_specific(TestCase):
 class Test_hdf5_data_Comment_1(base_test.Test_Comment_1):
     readfun = [readfun]
     basepath = testpath
-    dirname = "hdf5"
+    dirname = "hdf5/v01"
     extension = ".hdf5"
 
 
 class Test_hdf5_data_Comment_2(base_test.Test_Comment_2):
     readfun = [readfun]
     basepath = testpath
-    dirname = "hdf5"
+    dirname = "hdf5/v01"
     extension = ".hdf5"
 
 
 class Test_hdf5_data_save(TestCase):
     @classmethod
     def setUpClass(cls):
-        p = path(testpath / "testdata/hdf5/savetest")
+        p = path(testpath / "testdata/hdf5/v01/savetest")
         if not p.exists():  # pragma: no cover
             p.makedirs()
 
     @classmethod
     def tearDownClass(cls):
-        p = path(testpath / "testdata/hdf5/savetest")
+        p = path(testpath / "testdata/hdf5/v01/savetest")
         p.removedirs()
 
     def test_1(self):
         d = DataBlock()
         d.b = hfarray([2], dims=(DimSweep("a", 1),))
-        fname = testpath / "testdata/hdf5/savetest/res_1.hdf5"
+        fname = testpath / "testdata/hdf5/v01/savetest/res_1.hdf5"
         savefun(d, fname)
         fname.unlink()
 
@@ -96,7 +96,7 @@ class Test_hdf5_data_save(TestCase):
         d.comments = Comments(["Hej=10"])
 #        import pdb;pdb.set_trace()
         d.b = hfarray([2], dims=(DimSweep("a", 1),))
-        fname = testpath / "testdata/hdf5/savetest/res_2.hdf5"
+        fname = testpath / "testdata/hdf5/v01/savetest/res_2.hdf5"
         savefun(d, fname)
         fname.unlink()
 
@@ -111,7 +111,7 @@ class Test_hdf5_data_save(TestCase):
                        [[10, 20], [30, 40]]],
                       dims=dims,
                       outputformat="%.2f")
-        fname = testpath / "testdata/hdf5/savetest/res_3.hdf5"
+        fname = testpath / "testdata/hdf5/v01/savetest/res_3.hdf5"
         savefun(d, fname)
         fname.unlink()
 
@@ -120,7 +120,7 @@ class Test_hdf5_data_save(TestCase):
         d.comments = Comments(["Hej=10", "Svejs=11"])
         dim = DimSweep("f", 3, outputformat="%.1f")
         d.freq = dim
-        fname = testpath / "testdata/hdf5/savetest/res_4.hdf5"
+        fname = testpath / "testdata/hdf5/v01/savetest/res_4.hdf5"
         savefun(d, fname)
         fname.unlink()
 
@@ -130,7 +130,7 @@ class Test_hdf5_data_save(TestCase):
         dim = DimSweep("f", 3, outputformat="%.1f")
         d.freq = dim
         d.date = hfarray("2012-08-13 08:03:01", dtype="datetime64[us]")
-        fname = testpath / "testdata/hdf5/savetest/res_5.hdf5"
+        fname = testpath / "testdata/hdf5/v01/savetest/res_5.hdf5"
         savefun(d, fname)
         d2 = readfun(fname)
         fname.unlink()
@@ -143,7 +143,7 @@ class Test_hdf5_data_save(TestCase):
         d.freq = dim
         d.date = hfarray(["2012-08-13 08:03:01"] * 3, dims=(dim, ),
                          dtype="datetime64[us]")
-        fname = testpath / "testdata/hdf5/savetest/res_6.hdf5"
+        fname = testpath / "testdata/hdf5/v01/savetest/res_6.hdf5"
         savefun(d, fname)
         d2 = readfun(fname)
         fname.unlink()
@@ -156,7 +156,7 @@ class Test_hdf5_data_save(TestCase):
         d.freq = dim
         d.date = DimSweep("date", [hfarray("2012-08-13 08:03:01",
                           dtype="datetime64[us]")])
-        fname = testpath / "testdata/hdf5/savetest/res_7.hdf5"
+        fname = testpath / "testdata/hdf5/v01/savetest/res_7.hdf5"
         savefun(d, fname)
         d2 = readfun(fname)
         fname.unlink()
@@ -165,7 +165,7 @@ class Test_hdf5_data_save(TestCase):
     def test_8(self):
         d = DataBlock()
         d.b = hfarray([2], dims=(DimSweep("a", 1),))
-        fname = testpath / "testdata/hdf5/savetest/res_8.hdf5"
+        fname = testpath / "testdata/hdf5/v01/savetest/res_8.hdf5"
         with h5py.File(fname, mode="w") as fil:
             savefun(d, fil)
         fname.unlink()
@@ -175,7 +175,7 @@ class Test_hdf5_data_save(TestCase):
         d.comments = Comments(["Hej=10"])
 #        import pdb;pdb.set_trace()
         d.b = hfarray([2], dims=(DimSweep("a", 1), ), unit="V")
-        fname = testpath / "testdata/hdf5/savetest/res_9.hdf5"
+        fname = testpath / "testdata/hdf5/v01/savetest/res_9.hdf5"
         savefun(d, fname)
         d2 = readfun(fname)
         self.assertEqual(d2.b.unit, "V")

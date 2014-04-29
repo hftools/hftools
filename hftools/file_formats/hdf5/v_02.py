@@ -17,6 +17,9 @@ import numpy as np
 from hftools.dataset import DimRep, DimSweep, hfarray, DataBlock,\
     DimMatrix_i, DimMatrix_j, DimPartial
 from hftools.py3compat import PY3
+from hftools.dataset.comments import Comments
+#from hftools.file_formats.hdf5.hdf5 import hdf5context
+from .helper import hdf5context
 
 dimrep = {"DimRep": DimRep,
           "DimSweep": DimSweep,
@@ -91,11 +94,22 @@ def create_dataset(db, key, data, expandable=False):
     db[key].attrs["dtype"] = data_dtype.str
 
 
-def read_hdf5(filehandle, **kw):
-    db = DataBlock()
-    for k in filehandle:
-        db[k] = getvar(filehandle, k)
-    return db
+def read_hdf5_handle(filehandle, **kw):
+    if isinstance(filehandle, h5py.File):
+        db = DataBlock()
+        for k in filehandle:
+            db[k] = getvar(filehandle, k)
+        db.comments = Comments()
+        return db
+    else:
+        raise IOError("filehandle should be a h5py File, is: %r" % filehandle)
+
+
+def read_hdf5(h5file, name="datablock", **kw):
+    with hdf5context(h5file) as fil:
+        d = read_hdf5_handle(fil, name=name, **kw)
+    return d
+
 
 if PY3:
     h5py_string_dtype = h5py.special_dtype(vlen=str)
@@ -103,7 +117,7 @@ else:
     h5py_string_dtype = h5py.special_dtype(vlen=unicode)
 
 
-def save_hdf5(db, filehandle, expandable=False, expanddim=None, **kw):
+def save_hdf5_handle(db, filehandle, expandable=False, expanddim=None, **kw):
     if expanddim is None:
         expanddim = DimRep("INDEX", 1)
     filehandle.attrs["hftools file version"] = "0.2"
@@ -115,31 +129,44 @@ def save_hdf5(db, filehandle, expandable=False, expanddim=None, **kw):
         if v.outputformat:
             filehandle[k].attrs["outputformat"] = v.outputformat
 
-    data = np.array(expanddim.data)
-    filehandle.create_dataset(expanddim.name, data=data, maxshape=(None,))
-    filehandle[expanddim.name].attrs["dtype"] = data.dtype.str
-    filehandle[expanddim.name].attrs["dimtype"] = expanddim.__class__.__name__
-    if expanddim.unit:
-        filehandle[expanddim.name].attrs["unit"] = expanddim.unit
-    if expanddim.outputformat:
-        outputformat = expanddim.outputformat
-        filehandle[expanddim.name].attrs["outputformat"] = outputformat
+    if expandable:
+        data = np.array(expanddim.data)
+        filehandle.create_dataset(expanddim.name, data=data, maxshape=(None,))
+        filehandle[expanddim.name].attrs["dtype"] = data.dtype.str
+        expanddim_class = expanddim.__class__.__name__
+        filehandle[expanddim.name].attrs["dimtype"] = expanddim_class
+        if expanddim.unit:
+            filehandle[expanddim.name].attrs["unit"] = expanddim.unit
+        if expanddim.outputformat:
+            outputformat = expanddim.outputformat
+            filehandle[expanddim.name].attrs["outputformat"] = outputformat
 
     for k, v in db.vardata.items():
         if expandable and v.ndim == 0:
             v = v.add_dim(expanddim)
-        else:
+        elif expandable:
             v = v.add_dim(expanddim, 1)
+        else:
+            pass
         create_dataset(filehandle, k, v, expandable=expandable)
         for idx, dv in enumerate(v.dims):
             filehandle[k].dims.create_scale(filehandle[dv.name])
             filehandle[k].dims[idx].attach_scale(filehandle[dv.name])
 
-        filehandle[k].attrs["arraytype"] = dv.__class__.__name__
+        filehandle[k].attrs["arraytype"] = v.__class__.__name__
         if v.unit:
             filehandle[k].attrs["unit"] = v.unit
         if v.outputformat:
             filehandle[k].attrs["outputformat"] = v.outputformat
+
+
+def save_hdf5(db, h5file, expandable=False, expanddim=None, **kw):
+    with hdf5context(h5file, mode="w") as fil:
+        d = save_hdf5_handle(db, fil,
+                             expandable=expandable,
+                             expanddim=expanddim,
+                             **kw)
+    return d
 
 
 def append_hdf5(db, filehandle, expanddim=None, **kw):
