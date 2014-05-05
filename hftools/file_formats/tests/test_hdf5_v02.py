@@ -8,12 +8,15 @@
 #-----------------------------------------------------------------------------
 import h5py
 
-import hftools.file_formats.hdf5.v_01
+import hftools.file_formats.hdf5.v_02
+import hftools.file_formats.hdf5 as hdf5
 from hftools import path
 from hftools.testing import TestCase
 import hftools.file_formats.tests.base_test as base_test
 from hftools.dataset import DataBlock, hfarray, DimSweep
 from hftools.file_formats.common import Comments
+
+from hftools.file_formats.hdf5.v_01 import save_hdf5 as save_hdf5_v01
 from hftools.file_formats.hdf5.v_02 import append_hdf5
 from hftools.file_formats.hdf5.helper import hdf5context
 testpath = path(__file__).dirname()
@@ -40,6 +43,14 @@ class Test_hdf5_data_1b(base_test.Test_1):
     readpars = dict(verbose=False)
 
 
+class Test_hdf5_main_data_1(Test_hdf5_data_1):
+    readfun = [hdf5.read_hdf5]
+
+
+class Test_hdf5_main_data_1b(Test_hdf5_data_1b):
+    readfun = [hdf5.read_hdf5]
+
+
 class Test_hdf5_specific(TestCase):
     def test_both(self):
         d1 = readfun(testpath / "testdata/hdf5/v02/test1.hdf5")
@@ -62,6 +73,7 @@ class Test_hdf5_specific(TestCase):
 
 
 class Test_hdf5_data_save(TestCase):
+    savefun = [savefun]
     @classmethod
     def setUpClass(cls):
         p = path(testpath / "testdata/hdf5/v02/savetest")
@@ -77,7 +89,7 @@ class Test_hdf5_data_save(TestCase):
         d = DataBlock()
         d.b = hfarray([2], dims=(DimSweep("a", 1),))
         fname = testpath / "testdata/hdf5/v02/savetest/res_1.hdf5"
-        savefun(d, fname)
+        self.savefun[0](d, fname)
         fname.unlink()
 
     def test_2(self):
@@ -86,7 +98,7 @@ class Test_hdf5_data_save(TestCase):
 #        import pdb;pdb.set_trace()
         d.b = hfarray([2], dims=(DimSweep("a", 1),))
         fname = testpath / "testdata/hdf5/v02/savetest/res_2.hdf5"
-        savefun(d, fname)
+        self.savefun[0](d, fname)
         fname.unlink()
 
     def test_3(self):
@@ -101,7 +113,7 @@ class Test_hdf5_data_save(TestCase):
                       dims=dims,
                       outputformat="%.2f")
         fname = testpath / "testdata/hdf5/v02/savetest/res_3.hdf5"
-        savefun(d, fname)
+        self.savefun[0](d, fname)
         fname.unlink()
 
     def test_4(self):
@@ -110,7 +122,7 @@ class Test_hdf5_data_save(TestCase):
         dim = DimSweep("f", 3, outputformat="%.1f")
         d.freq = dim
         fname = testpath / "testdata/hdf5/v02/savetest/res_4.hdf5"
-        savefun(d, fname)
+        self.savefun[0](d, fname)
         fname.unlink()
 
     def test_5(self):
@@ -120,7 +132,7 @@ class Test_hdf5_data_save(TestCase):
         d.freq = dim
         d.date = hfarray("2012-08-13 08:03:01", dtype="datetime64[us]")
         fname = testpath / "testdata/hdf5/v02/savetest/res_5.hdf5"
-        savefun(d, fname)
+        self.savefun[0](d, fname)
         d2 = readfun(fname)
         fname.unlink()
         self.assertEqual(d2.date, d.date)
@@ -133,7 +145,7 @@ class Test_hdf5_data_save(TestCase):
         d.date = hfarray(["2012-08-13 08:03:01"] * 3, dims=(dim, ),
                          dtype="datetime64[us]")
         fname = testpath / "testdata/hdf5/v02/savetest/res_6.hdf5"
-        savefun(d, fname)
+        self.savefun[0](d, fname)
         d2 = readfun(fname)
         fname.unlink()
         self.assertEqual(str(d2.date), str(d.date))
@@ -147,7 +159,7 @@ class Test_hdf5_data_save(TestCase):
                          dims=(DimSweep("dateidx", 1),),
                          dtype="datetime64[us]")
         fname = testpath / "testdata/hdf5/v02/savetest/res_7.hdf5"
-        savefun(d, fname)
+        self.savefun[0](d, fname)
         d2 = readfun(fname)
         fname.unlink()
         self.assertEqual(d2.date, d.date)
@@ -157,7 +169,7 @@ class Test_hdf5_data_save(TestCase):
         d.b = hfarray([2], dims=(DimSweep("a", 1),))
         fname = testpath / "testdata/hdf5/v02/savetest/res_8.hdf5"
         with h5py.File(fname, mode="w") as fil:
-            savefun(d, fil)
+            self.savefun[0](d, fil)
         fname.unlink()
 
     def test_9(self):
@@ -166,10 +178,14 @@ class Test_hdf5_data_save(TestCase):
 #        import pdb;pdb.set_trace()
         d.b = hfarray([2], dims=(DimSweep("a", 1), ), unit="V")
         fname = testpath / "testdata/hdf5/v02/savetest/res_9.hdf5"
-        savefun(d, fname)
+        self.savefun[0](d, fname)
         d2 = readfun(fname)
         self.assertEqual(d2.b.unit, "V")
         fname.unlink()
+
+
+class Test_hdf5_main_data_save(Test_hdf5_data_save):
+    savefun = [lambda d, x: hdf5.save_hdf5(d, x, version="0.2")]
 
 
 class Test_hdf5_data_expandable(TestCase):
@@ -197,7 +213,21 @@ class Test_hdf5_data_expandable(TestCase):
             append_hdf5(d2, fil)
         d = readfun(fname)
         self.assertAllclose(hfarray([[2, 3]], dims=(i1, i2)), d.b)
+        fname.unlink()
 
+    def test_wrong_version(self):
+        i1 = DimSweep("a", 1)
+        i2 = DimSweep("INDEX", 2)
+        d1 = DataBlock()
+        d1.b = hfarray([2], dims=(DimSweep("a", 1),))
+        d2 = DataBlock()
+        d2.b = hfarray([3], dims=(DimSweep("a", 1),))
+        fname = testpath / "testdata/hdf5/v02/savetest/res_1.hdf5"
+
+        with hdf5context(fname, mode="w") as fil:
+            save_hdf5_v01(d1, fil)
+            self.assertRaises(KeyError, append_hdf5, d2, fil)
+#            append_hdf5(d2, fil)
         fname.unlink()
 
 
