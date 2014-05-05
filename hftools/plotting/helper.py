@@ -381,6 +381,13 @@ class HFToolsAxes(Axes):
         if hasattr(yfmt, "set_label_unit"):
             yfmt.set_label_unit(unit)
 
+    def get_ylabel_unit(self):
+        xfmt = self.axes.yaxis.get_major_formatter()
+        if hasattr(xfmt, "get_label_unit"):
+            return xfmt.get_label_unit()
+        else:
+            return None
+
     def set_xlabel_fmt(self, fmt, unit=None):
         xfmt = self.axes.xaxis.get_major_formatter()
         xfmt.set_label_fun = self.set_xlabel

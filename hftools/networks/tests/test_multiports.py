@@ -7,12 +7,14 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 import os
+import warnings
 
 import numpy as np
 
 import hftools.dataset.arrayobj as aobj
 import hftools.networks.multiports as mp
 from hftools.testing import TestCase, random_complex_matrix
+from hftools.utils import HFToolsWarning
 
 basepath = os.path.split(__file__)[0]
 
@@ -35,6 +37,21 @@ class _Test_hfarray(TestCase):
         self.b = aobj.hfarray([[[1, 2 + 0j, 3],
                                 [4, 5, 6],
                                 [7, 8, 9]]], dims=bdims)
+        self.adims = adims
+        self.bdims = bdims
+
+
+class Test_info_deprecate(_Test_hfarray):
+    def test1(self):
+        self.assertHFToolsWarning(mp.SArray, self.a, info=self.adims)
+        with warnings.catch_warnings():
+            warnings.resetwarnings()
+            warnings.simplefilter("ignore", HFToolsWarning)
+            mp.SArray(self.a, info=self.adims)
+            self.assertRaises(ValueError, mp.SArray, self.a,
+                              info=self.adims, dims=self.adims)
+
+
 
 
 class Test_TwoPortArray(_Test_hfarray):
@@ -268,13 +285,13 @@ class Test_unit_matrices(TestCase):
     def test_unit_matrix(self):
         m = mp.unit_matrix()
         self.assertEqual(m.shape, (2, 2))
-        self.assertTrue(isinstance(m, mp.SArray))
+        self.assertIsInstance(m, mp.SArray)
         self.assertAllclose(m, [[1, 0], [0, 1]])
 
     def test_unit_smatrix(self):
         m = mp.unit_smatrix()
         self.assertEqual(m.shape, (2, 2))
-        self.assertTrue(isinstance(m, mp.SArray))
+        self.assertIsInstance(m, mp.SArray)
         self.assertAllclose(m, [[0, 1], [1, 0]])
 
 

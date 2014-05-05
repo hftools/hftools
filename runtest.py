@@ -18,6 +18,7 @@ pjoin = os.path.join
 psplit = os.path.split
 
 #warnings.filterwarnings(action='ignore', category=np.ModuleDeprecationWarning)
+#import warnings
 #warnings.filterwarnings(action='error', category=DeprecationWarning)
 
 

@@ -118,12 +118,14 @@ class ReadCITIFileFormat(ReadFileFormat):
         block.blockname = name[0]
         for name, typ, N in varnames:
             N = int(N)
-            tagname, = OneOf(["VAR_LIST_BEGIN", "SEG_LIST_BEGIN"], "Missing VAR_LIST_BEGIN or SEG_LIST_BEGIN")(stream)
+            errmsg = "Missing VAR_LIST_BEGIN or SEG_LIST_BEGIN"
+            tagname, = OneOf(["VAR_LIST_BEGIN", "SEG_LIST_BEGIN"],
+                             errmsg)(stream)
             if tagname.startswith("VAR_LIST"):
                 datalist = handle_data(ManyOptional("DATA")(stream), typ)
                 block[name] = DimSweep(name, datalist)
                 One("VAR_LIST_END", "Missing VAR_LIST_END")(stream)
-            elif tagname.startswith("SEG"):
+            elif tagname.startswith("SEG"):  # pragma: no branch
                 datalist, = One("SEG", "Missing SEG")(stream)
                 _, start, stop, step = datalist.strip().split()
                 block[name] = DimSweep(name,
@@ -131,6 +133,8 @@ class ReadCITIFileFormat(ReadFileFormat):
                                                    float(stop),
                                                    int(step)))
                 One("SEG_LIST_END", "Missing SEG_LIST_END")(stream)
+            else:  # pragma: no cover
+                pass
 
         comments.extend(ManyOptional("COMMENT")(stream))
         for idx, com in enumerate(comments):

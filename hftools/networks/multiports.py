@@ -31,7 +31,6 @@ Twoports
 .. autoclass:: TpArray
 
 """
-import warnings
 
 import numpy as np
 from numpy import array, identity, \
@@ -42,6 +41,7 @@ from hftools.networks.spar_functions import cascadeS, deembed, deembedright,\
     deembedleft
 from hftools.dataset.arrayobj import hfarray, DimSweep,\
     DimMatrix_i, DimMatrix_j, _hfarray, ismatrix
+from hftools.utils import warn
 
 
 def make_accessor(i, j):
@@ -85,7 +85,7 @@ class _MultiPortArray(_hfarray):
     _attrfuns = {}
     _Z0 = None
 
-    def __init__(self, data, dims=None, copy=True, Z0=None):
+    def __init__(self, data, dims=None, copy=True, Z0=None, info=None):
         data = np.asanyarray(data)
         if (self.shortname is not None) and (data.ndim >= 2):
             self._attrfuns = {}
@@ -127,9 +127,9 @@ class _MultiPortArray(_hfarray):
                 subok=False, ndmin=0, unit=None, info=None, Z0=None):
 
         if info is not None:
-            warnings.warn("_MultiPortArray, use dims not info")
+            warn("_MultiPortArray, use dims not info")
             if dims is not None:
-                raise Exception("Can not specify both dims and info")
+                raise ValueError("Can not specify both dims and info")
             dims = info
             info = None
         data = np.asanyarray(data)
@@ -219,7 +219,7 @@ class _TwoPortArray(_MultiPortArray):
     """Basklass som ej skall anvandas direkt
     """
 
-    def __init__(self, data, dims=None, copy=True, Z0=None):
+    def __init__(self, data, dims=None, copy=True, Z0=None, info=None):
         data = np.asanyarray(data)
         if data.shape[-1] != 2:
             raise ValueError("%s must be a 2x2 matrix")
@@ -255,14 +255,14 @@ This model may be of any dimension.
 """
     shortname = "Z"
 
-    def __init__(self, data, dims=None, copy=True):
+    def __init__(self, data, dims=None, copy=True, info=None):
         data = np.asanyarray(data)
         if isinstance(data, YArray) and data.ismatrix():
             if data.shape[-1] != data.shape[-2]:
                 raise ValueError("%s must be a square matrix" % self.shortname)
             data = _hfarray(inv(data))
             self[:] = data
-        _MultiPortArray.__init__(self, data, dims, copy=copy)
+        _MultiPortArray.__init__(self, data, dims, copy=copy, info=info)
 
     @property
     def P(self):
@@ -291,14 +291,14 @@ This model may be of any dimension.
 """
     shortname = "Y"
 
-    def __init__(self, data, dims=None, copy=True):
+    def __init__(self, data, dims=None, copy=True, info=None):
         data = np.asanyarray(data)
         if isinstance(data, ZArray):
             if data.shape[-1] != data.shape[-2]:
                 raise ValueError("%s must be a square matrix" % self.shortname)
             data = _hfarray(inv(data))
             self[:] = data
-        _MultiPortArray.__init__(self, data, dims, copy=copy)
+        _MultiPortArray.__init__(self, data, dims, copy=copy, info=info)
 
     @property
     def P(self):
@@ -329,8 +329,8 @@ This model may be of any dimension.
 """
     shortname = "S"
 
-    def __init__(self, data, dims=None, copy=True, Z0=50.):
-        _MultiPortArray.__init__(self, data, dims, copy=copy, Z0=Z0)
+    def __init__(self, data, dims=None, copy=True, Z0=50., info=None):
+        _MultiPortArray.__init__(self, data, dims, copy=copy, Z0=Z0, info=info)
 
     @property
     def Z0(self):
@@ -370,8 +370,8 @@ This model may be of any dimension.
 """
     shortname = "G"
 
-    def __init__(self, data, dims=None, copy=True):
-        _TwoPortArray.__init__(self, data, dims, copy=copy)
+    def __init__(self, data, dims=None, copy=True, info=None):
+        _TwoPortArray.__init__(self, data, dims, copy=copy, info=info)
 
     @property
     def P(self):
@@ -404,8 +404,8 @@ This model is only valid for a twoport
 """
     shortname = "H"
 
-    def __init__(self, data, dims=None, copy=True):
-        _TwoPortArray.__init__(self, data, dims, copy=copy)
+    def __init__(self, data, dims=None, copy=True, info=None):
+        _TwoPortArray.__init__(self, data, dims, copy=copy, info=info)
 
     @property
     def P(self):
@@ -437,8 +437,8 @@ This model is only valid for a twoport
 """
     shortname = "A"
 
-    def __init__(self, data, dims=None, copy=True):
-        _TwoPortArray.__init__(self, data, dims, copy=copy)
+    def __init__(self, data, dims=None, copy=True, info=None):
+        _TwoPortArray.__init__(self, data, dims, copy=copy, info=info)
 
     @property
     def P(self):
@@ -471,9 +471,9 @@ This model may be of any dimension.
 """
     shortname = "T"
 
-    def __init__(self, data, dims=None, copy=True):
+    def __init__(self, data, dims=None, copy=True, info=None):
         self.Z0 = 50
-        _TwoPortArray.__init__(self, data, dims, copy=copy)
+        _TwoPortArray.__init__(self, data, dims, copy=copy, info=info)
 
     @property
     def P(self):
@@ -511,9 +511,9 @@ This model is only valid for a twoport
 """
     shortname = "Tp"
 
-    def __init__(self, data, dims=None, copy=True):
+    def __init__(self, data, dims=None, copy=True, info=None):
         self.Z0 = 50
-        _TwoPortArray.__init__(self, data, dims, copy=copy)
+        _TwoPortArray.__init__(self, data, dims, copy=copy, info=info)
 
     @property
     def P(self):

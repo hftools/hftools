@@ -1,0 +1,20 @@
+VNA:
+  gpib: 16
+  ifbw: 100Hz
+  date: 2010-10-10 08:30
+  datelong: 2010-10-10 08:30:01
+  time: 00:01:01
+  time2: 00:01
+  time3: 23:59:59
+  timespan: 20 hours
+  testset:
+    ifbw: 10Hz
+    smooth:
+      - 10%
+      - 10ppm
+      - 10ppb
+    timespans:
+      - 1 days
+      - 1 hours
+      - 1 minutes
+      - 1 seconds

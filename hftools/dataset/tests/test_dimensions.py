@@ -6,15 +6,16 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 import os
-
+import warnings
 import numpy as np
 
 import hftools.dataset.dim as ddim
 
 from hftools.dataset.dim import DimSweep, ComplexDiagAxis, ComplexIndepAxis,\
-    ComplexDerivAxis, dims_has_complex
+    ComplexDerivAxis, dims_has_complex, info_has_complex
 from hftools.testing import TestCase, make_load_tests
 from hftools.dataset import hfarray
+from hftools.utils import reset_hftools_warnings, HFToolsDeprecationWarning
 
 basepath = os.path.split(__file__)[0]
 load_tests = make_load_tests(ddim)
@@ -51,6 +52,18 @@ class Test_Dim_init(TestCase):
 
     def test_5(self):
         a = DimSweep(self.dim, name="P", unit="W", data=range(3))
+        self.assertEqual(a.name, "P")
+        self.assertEqual(a.unit, "W")
+        self.assertAllclose(a.data, range(3))
+
+    def test_6(self):
+        a = DimSweep("P", data=set([0, 1, 2]),  unit="W")
+        self.assertEqual(a.name, "P")
+        self.assertEqual(a.unit, "W")
+        self.assertAllclose(sorted(a.data), range(3))
+
+    def test_7(self):
+        a = DimSweep("P", data=np.array([0, 1, 2]),  unit="W")
         self.assertEqual(a.name, "P")
         self.assertEqual(a.unit, "W")
         self.assertAllclose(a.data, range(3))
@@ -97,6 +110,12 @@ class Test_Dim(TestCase):
         a = self.cls("a", 4)
         b = "a"
         self.assertEqual(a, b)
+
+    def test_cmp_4(self):
+        a = self.cls("a", 4)
+        b = "b"
+        res = a < b
+        self.assertTrue(res)
 
     def test_slice_1(self):
         a = self.cls("a", 10)
@@ -231,6 +250,24 @@ class Test_dims_has_complex(TestCase):
     def test_5(self):
         self._helper((DimSweep("d", 3), ComplexIndepAxis("cplx", 2),
                       ComplexDerivAxis("cplx", 2)))
+
+
+class Test_info_has_complex(Test_dims_has_complex):
+    def _helper(self, dims):
+        reset_hftools_warnings()
+        self.assertHFToolsDeprecationWarning(info_has_complex, dims)
+        with warnings.catch_warnings():
+            warnings.resetwarnings()
+            warnings.simplefilter("ignore", HFToolsDeprecationWarning)
+            self.assertTrue(info_has_complex(dims))
+
+    def _helper_false(self, dims):
+        reset_hftools_warnings()
+        self.assertHFToolsDeprecationWarning(info_has_complex, dims)
+        with warnings.catch_warnings():
+            warnings.resetwarnings()
+            warnings.simplefilter("ignore", HFToolsDeprecationWarning)
+            self.assertFalse(info_has_complex(dims))
 
 
 class TestDimConv(TestCase):

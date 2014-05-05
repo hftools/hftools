@@ -13,13 +13,10 @@ import datetime
 import re
 import warnings
 
-import numpy as np
 import yaml
 
-from yaml import load, dump
-from yaml import Loader, Dumper
 from collections import OrderedDict
-from hftools.constants import unit_to_multiplier, siprefixes
+from hftools.constants import siprefixes
 from hftools import path
 
 
@@ -51,6 +48,7 @@ class LexicalScopeList(list):
                 out.append(v)
         return out
 
+
 def find_next_dict(dct):
     try:
         parent = dct.parent
@@ -60,6 +58,7 @@ def find_next_dict(dct):
         return parent
     else:
         return find_next_dict(parent)
+
 
 class LexicalScopeDict(OrderedDict):
     def __init__(self, *k, **kw):
@@ -84,7 +83,8 @@ class LexicalScopeDict(OrderedDict):
     def __getitem__(self, key):
         if OrderedDict.__contains__(self, key):
             return OrderedDict.__getitem__(self, key)
-        elif not OrderedDict.__contains__(self, key) and self.parent is not None:
+        elif ((not OrderedDict.__contains__(self, key)) and
+              (self.parent is not None)):
             dct = find_next_dict(self)
             if dct is None:
                 raise KeyError("%r not in dictionary" % key)
@@ -101,10 +101,10 @@ class LexicalScopeDict(OrderedDict):
             else:
                 out[k] = v
         return out
-        
+
     def copy(self):
         return LexicalScopeDict(OrderedDict.copy(self))
-        
+
     def __repr__(self):
         return dict.__repr__(self)
 
@@ -153,6 +153,7 @@ def ensure_lexical(obj, parent):
         l = obj
     return l
 
+
 def ensure_standard(obj, parent):
     if isinstance(obj, list):
         l = LexicalScopeList(obj, parent)
@@ -175,14 +176,17 @@ class LexicalConfig(LexicalScopeDict):
             with io.open(self.filename, encoding="utf-8") as stream:
                 self.update(yaml.load(stream, Loader=LexicalLoader))
         except IOError:
-            print("missing config file %r"%self.filename)
-            
-    def write(self, filename = None):
+            print("missing config file %r" % self.filename)
+
+    def write(self, filename=None):
         if filename is None:
             filename = self.filename
         with io.open(filename, "w", encoding="utf-8") as stream:
-            yaml.dump(self.convert_to_standard(), stream, Dumper=StandardDumper,
+            yaml.dump(self.convert_to_standard(), stream,
+                      Dumper=StandardDumper,
                       default_flow_style=False)
+
+
 class Config(dict):
     def __init__(self, filename):
         dict.__init__(self)
@@ -195,14 +199,15 @@ class Config(dict):
             with io.open(self.filename, encoding="utf-8") as stream:
                 self.update(yaml.load(stream, Loader=StandardLoader))
         except IOError:
-            warnings.warn("missing config file %r"%self.filename)
-            
-    def write(self, filename = None):
+            warnings.warn("missing config file %r" % self.filename)
+
+    def write(self, filename=None):
         if filename is None:
             filename = self.filename
         with io.open(filename, "w", encoding="utf-8") as stream:
             yaml.dump(dict(self), stream, Dumper=StandardDumper,
                       default_flow_style=False)
+
 
 class SIValue(float):
     def __new__(self, value):
@@ -218,54 +223,41 @@ def convert_or_none(x):
         return x
     else:
         return float(x)
-    
-class TimeIntervall(object):
-    def __init__(self, value=None, days=None, hours=None, minutes=None, seconds=None):
-        if value is not None:
-            res = timeintervallpattern.match(value)
-            self.value = value
-            _, xdays, _, _, xhours, _, _, xminutes, _, _, xseconds, _ = res.groups()
-        else:
-            all = days or hours or minutes or seconds
-            if not all:
-               raise ValueError("Must specify value string or specific interval using days, hours, minutes, or seconds")
-            
-        days = days if days is not None else convert_or_none(xdays)
-        hours = hours if hours is not None else convert_or_none(xhours)
-        minutes = minutes if minutes is not None else convert_or_none(xminutes)
-        seconds = seconds if seconds is not None else convert_or_none(xseconds)
 
-        self.days = 0 if days is None else float(days)
-        self.hours = 0 if hours is None else float(hours)
-        self.minutes = 0 if minutes is None else float(minutes)
-        self.seconds = 0 if seconds is None else float(seconds)
-        self.value = value
-
-    def __repr__(self):
-        """
-        >>> TimeIntervall("1 days")
-        TimeIntervall(days=1.0)
-        """
-        out = []
-        if self.days:
-            out.append("days=%s" % self.days)
-        if self.hours:
-            out.append("hours=%s" % self.hours)
-        if self.minutes:
-            out.append("minutes=%s" % self.minutes)
-        if self.seconds:
-            out.append("seconds=%s" % self.seconds)
-        return "TimeIntervall(%s)" % ", ".join(out) 
 
 def sivalue_representer(dumper, data):
-    return dumper.represent_scalar(u'tag:yaml.org,2002:float', u'%s' % (data))
+    if data.unit:
+        return dumper.represent_scalar(u'tag:yaml.org,2002:str', u'%s%s' % (data, data.unit))
+    else:
+        return dumper.represent_scalar(u'tag:yaml.org,2002:float', u'%s' % (data))
+
+
 
 def timeintervall_representer(dumper, data):
-    return dumper.represent_scalar(u'tag:yaml.org,2002:str', u'%s' % (data.value))
+    tremain = data.total_seconds()
+    days = tremain // (3600 * 24)
+    tremain = tremain - days * 3600 * 24
+    hours = tremain // (3600)
+    tremain = tremain - hours * 3600
+    minutes = tremain // 60
+    tremain = tremain - minutes * 60
+    seconds = tremain
+    out = []
+    if days:
+        out.append(u"%s days" % days)
+    if hours:
+        out.append(u"%s hours" % hours)
+    if minutes:
+        out.append(u"%s minutes" % minutes)
+    if seconds:
+        out.append(u"%s seconds" % seconds)
+
+    return dumper.represent_scalar(u'tag:yaml.org,2002:str',
+                                   u" ".join(out))
+
 
 def timestamp_representer(dumper, data):
     return dumper.represent_scalar(u'tag:yaml.org,2002:str', u'%s' % (data))
-
 
 
 def path_representer(dumper, p):
@@ -275,7 +267,7 @@ reg_si_value = re.compile(r"^([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"
                           r"[ \t]*(([dcmunpfakMGTPE])?(Hz|V|A|m|s|W|Ohm)?)?$")
 
 reg_percent_value = re.compile(r"^([-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?)"
-                          r"[ \t]*(%|ppm|ppb)$")
+                               r"[ \t]*(%|ppm|ppb)$")
 
 
 regtime = re.compile(r"([0-9][0-9]):([0-9][0-9])(:([0-9][0-9]))?")
@@ -284,11 +276,11 @@ regdatetimeshort = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}"
                               r" [0-9][0-9]:[0-9][0-9]")
 regdate = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 
-
-timeintervallpattern = re.compile(r'^(([0-9]+([.][0-9]*)?)[ ]*(?:days|day))?[ ]*'
-                                  r'(([0-9]+([.][0-9]*)?)[ ]*(?:hour|hours))?[ ]*'
-                                  r'(([0-9]+([.][0-9]*)?)[ ]*(?:minutes|minute))?[ ]*'
-                                  r'(([0-9]+([.][0-9]*)?)[ ]*(?:second|seconds))?$')
+rec = re.compile
+timeintervallpattern = rec(r'^(([0-9]+([.][0-9]*)?)[ ]*(?:days|day))?[ ]*'
+                           r'(([0-9]+([.][0-9]*)?)[ ]*(?:hour|hours))?[ ]*'
+                           r'(([0-9]+([.][0-9]*)?)[ ]*(?:minutes|minute))?[ ]*'
+                           r'(([0-9]+([.][0-9]*)?)[ ]*(?:second|seconds))?$')
 
 
 def sivalue_constructor(loader, node):
@@ -306,7 +298,7 @@ def percentvalue_constructor(loader, node):
         return float(v) * 1e-6
     elif kind == "ppb":
         return float(v) * 1e-9
-    else:
+    else:  # pragma: no cover
         raise ValueError("Not a valid percent, ppm, ppb kind %r" % kind)
 
 
@@ -319,12 +311,15 @@ def timeintervall_constructor(loader, node):
     minutes = 0 if minutes is None else float(minutes)
     seconds = 0 if seconds is None else float(seconds)
 
-    return datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+    return datetime.timedelta(days=days,
+                              hours=hours,
+                              minutes=minutes,
+                              seconds=seconds)
 
 
 def shortdatetime_constructor(loader, node):
     value = loader.construct_scalar(node)
-    return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M") 
+    return datetime.datetime.strptime(value, "%Y-%m-%d %H:%M")
 
 
 def time_constructor(loader, node):
@@ -338,11 +333,11 @@ def time_constructor(loader, node):
     d2 = datetime.datetime.combine(dnow, t)
     if d2 < dnow:
         d2 = d2 + datetime.timedelta(days=1)
-    return  d2 #BP
+    return d2
 
 
 def overrideint(loader, node):
-    value = loader.construct_scalar(node) #BP
+    value = loader.construct_scalar(node)
     res = regtime.match(value)
     if res:
         return time_constructor(loader, node)
@@ -351,20 +346,22 @@ def overrideint(loader, node):
 
 
 class LexicalLoader(yaml.SafeLoader):
-    
     def construct_mapping(self, node, deep=False):
         if not isinstance(node, yaml.MappingNode):
+            msg = "expected a mapping node, but found %s" % node.id
             raise yaml.ConstructorError(None, None,
-                    "expected a mapping node, but found %s" % node.id,
-                    node.start_mark)
+                                        msg,
+                                        node.start_mark)
         mapping = LexicalScopeDict()
         for key_node, value_node in node.value:
             key = self.construct_object(key_node, deep=deep)
             try:
                 hash(key)
             except TypeError, exc:
-                raise yaml.ConstructorError("while constructing a mapping", node.start_mark,
-                        "found unacceptable key (%s)" % exc, key_node.start_mark)
+                msg = "while constructing a mapping"
+                msg2 = "found unacceptable key (%s)" % exc
+                raise yaml.ConstructorError(msg, node.start_mark,
+                                            msg2, key_node.start_mark)
             value = self.construct_object(value_node, deep=deep)
             if isinstance(value, (LexicalScopeDict, LexicalScopeList)):
                 value.parent = mapping
@@ -373,9 +370,8 @@ class LexicalLoader(yaml.SafeLoader):
 
     def construct_sequence(self, node, deep=False):
         if not isinstance(node, yaml.SequenceNode):
-            raise yaml.ConstructorError(None, None,
-                    "expected a sequence node, but found %s" % node.id,
-                    node.start_mark)
+            msg = "expected a sequence node, but found %s" % node.id
+            raise yaml.ConstructorError(None, None, msg, node.start_mark)
         out = LexicalScopeList()
         for child in node.value:
             value = self.construct_object(child, deep=deep)
@@ -389,7 +385,6 @@ class LexicalLoader(yaml.SafeLoader):
 
     def construct_yaml_seq(self, node):
         yield self.construct_sequence(node)
-
 
 
 class StandardLoader(yaml.SafeLoader):
@@ -407,27 +402,35 @@ for loader in [LexicalLoader, StandardLoader]:
     loader.add_constructor(u'!percentvalue', percentvalue_constructor)
     loader.add_constructor(u'tag:yaml.org,2002:int', overrideint)
 
-LexicalLoader.add_constructor('tag:yaml.org,2002:map', LexicalLoader.construct_yaml_map)
-LexicalLoader.add_constructor('tag:yaml.org,2002:seq', LexicalLoader.construct_yaml_seq)
+LexicalLoader.add_constructor('tag:yaml.org,2002:map',
+                              LexicalLoader.construct_yaml_map)
+LexicalLoader.add_constructor('tag:yaml.org,2002:seq',
+                              LexicalLoader.construct_yaml_seq)
+
 
 def lexical_scope_dict_representer(dumper, data):
     return dumper.represent_mapping(u'tag:yaml.org,2002:map', data.items())
+
 
 def lexical_scope_list_representer(dumper, data):
     return dumper.represent_mapping(u'tag:yaml.org,2002:seq', data)
 
 
-
-StandardDumper.add_representer(TimeIntervall, timeintervall_representer)
 StandardDumper.add_representer(SIValue, sivalue_representer)
 StandardDumper.add_representer(datetime.datetime, timestamp_representer)
-StandardDumper.add_representer(LexicalScopeDict, lexical_scope_dict_representer)
-StandardDumper.add_representer(LexicalScopeList, lexical_scope_list_representer)
+StandardDumper.add_representer(datetime.timedelta, timeintervall_representer)
+StandardDumper.add_representer(LexicalScopeDict,
+                               lexical_scope_dict_representer)
+StandardDumper.add_representer(LexicalScopeList,
+                               lexical_scope_list_representer)
 StandardDumper.add_representer(path, path_representer)
 
 for loader_or_dumper in [LexicalLoader, StandardLoader, StandardDumper]:
     loader_or_dumper.add_implicit_resolver(u'!sivalue', reg_si_value, None)
-    loader_or_dumper.add_implicit_resolver(u'!percentvalue', reg_percent_value, None)
-    loader_or_dumper.add_implicit_resolver(u'!timeintervall', timeintervallpattern, None)
-    loader_or_dumper.add_implicit_resolver(u'!shortdatetime', regdatetimeshort, None)
+    loader_or_dumper.add_implicit_resolver(u'!percentvalue',
+                                           reg_percent_value, None)
+    loader_or_dumper.add_implicit_resolver(u'!timeintervall',
+                                           timeintervallpattern, None)
+    loader_or_dumper.add_implicit_resolver(u'!shortdatetime',
+                                           regdatetimeshort, None)
     loader_or_dumper.add_implicit_resolver(u'!time', regtime, None)

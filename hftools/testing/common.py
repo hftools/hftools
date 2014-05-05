@@ -14,10 +14,10 @@ from hftools.py3compat import PY3
 
 if PY3:
     import unittest
-    from unittest import skip
+    from unittest import skip, expectedFailure
 else:
     import unittest2 as unittest
-    from unittest2 import skip
+    from unittest2 import skip, expectedFailure
 
 
 import numpy as np
@@ -47,16 +47,16 @@ class TestCase(unittest.TestCase):
             standardMsg = '%s is not an instance of %r' % arg
             self.fail(self._formatMessage(msg, standardMsg))
 
-    def assertHFToolsWarning(self, funk, *k):
+    def assertHFToolsWarning(self, funk, *k, **kw):
         warnings.resetwarnings()
         warnings.simplefilter("error", HFToolsWarning)
-        self.assertRaises(HFToolsWarning, funk, *k)
+        self.assertRaises(HFToolsWarning, funk, *k, **kw)
         warnings.simplefilter("ignore", HFToolsWarning)
 
-    def assertHFToolsDeprecationWarning(self, funk, *k):
+    def assertHFToolsDeprecationWarning(self, funk, *k, **kw):
         warnings.resetwarnings()
         warnings.simplefilter("error", HFToolsDeprecationWarning)
-        self.assertRaises(HFToolsDeprecationWarning, funk, *k)
+        self.assertRaises(HFToolsDeprecationWarning, funk, *k, **kw)
         warnings.simplefilter("ignore", HFToolsDeprecationWarning)
 
 _IDX = 1
