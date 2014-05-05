@@ -29,18 +29,8 @@ dimrep = {"DimRep": DimRep,
           }
 
 
-def expand_dataset(dataset, expansion, axis=None):
-    if axis is None:
-        expansion = expansion[:]
-        newsize = []
-        for current, maxlen in (dataset.shape, dataset.maxshape):
-            if maxlen is None:
-                newsize.append(current + expansion.pop(0))
-            else:
-                newsize.append(current)
-        dataset.resize(newsize)
-    else:
-        dataset.resize(dataset.shape[axis] + expansion, axis=axis)
+def expand_dataset(dataset, expansion, axis):
+    dataset.resize(dataset.shape[axis] + expansion, axis=axis)
 
 
 def getvar(db, key):
@@ -61,12 +51,10 @@ def getvar(db, key):
     if len(dims) == len(X.dims):
         return hfarray(X.value, dims=dims, unit=unit,
                        dtype=dtype, outputformat=outputformat)
-    elif len(X.dims) == 1 and "dimtype" in X.attrs:
+    else:
         dimcls = dimrep[X.attrs.get("dimtype", "DimSweep")]
         dim = dimcls(X.name.strip("/"), X[...], unit=unit)
         return hfarray(X.value, dims=(dim,), dtype=dtype, unit=unit)
-    else:
-        return np.array(X.value, dtype=dtype)
 
 
 def create_dataset(db, key, data, expandable=False):
@@ -82,7 +70,7 @@ def create_dataset(db, key, data, expandable=False):
         elif np.issubdtype(data.dtype, np.unicode_):
             data = data.astype(h5py_string_dtype)
     if expandable:
-        if data.ndim == 0:
+        if data.ndim in (0, 1):
             maxshape = (None, )
         else:
             maxshape = list(data.shape)
@@ -113,7 +101,7 @@ def read_hdf5(h5file, name="datablock", **kw):
 
 if PY3:
     h5py_string_dtype = h5py.special_dtype(vlen=str)
-else:
+else:  # if PY2
     h5py_string_dtype = h5py.special_dtype(vlen=unicode)
 
 
@@ -170,18 +158,20 @@ def save_hdf5(db, h5file, expandable=False, expanddim=None, **kw):
 
 
 def append_hdf5(db, filehandle, expanddim=None, **kw):
-    if filehandle.attrs["hftools file version"] != "0.2":
+    key = "hftools file version"
+    if key not in filehandle.attrs or filehandle.attrs[key] != "0.2":
         raise Exception("Can only append to hftools version 0.2")
     if expanddim is None:
         expanddim = DimRep("INDEX", 1)
+    idx = filehandle[expanddim.name][-1] + 1
     expand_dataset(filehandle[expanddim.name], 1, 0)
-    filehandle[expanddim.name].value[-1] = expanddim.data[0]
+    filehandle[expanddim.name].value[-1] = idx
 
     for k, v in filehandle.items():
         if k in db.ivardata or k == expanddim.name:
             continue
         if k not in db.vardata:
-            raise Exception("Variable %r missing in db, can not append" % k)
+            raise ValueError("Variable %r missing in db, can not append" % k)
         diskdata = filehandle[k]
         ax = diskdata.maxshape.index(None)
         expand_dataset(diskdata, 1, ax)

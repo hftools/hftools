@@ -7,7 +7,7 @@
 #-----------------------------------------------------------------------------
 import h5py
 
-import hftools.file_formats.hdf5.v_01
+import hftools
 import hftools.file_formats.hdf5 as hdf5
 from hftools import path
 from hftools.testing import TestCase

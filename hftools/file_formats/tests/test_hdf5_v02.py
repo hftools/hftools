@@ -7,13 +7,15 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 import h5py
+import numpy as np
 
-import hftools.file_formats.hdf5.v_02
+import hftools
+import hftools.file_formats.hdf5.v_02 as v_02
 import hftools.file_formats.hdf5 as hdf5
 from hftools import path
 from hftools.testing import TestCase
 import hftools.file_formats.tests.base_test as base_test
-from hftools.dataset import DataBlock, hfarray, DimSweep
+from hftools.dataset import DataBlock, hfarray, DimSweep, DimRep
 from hftools.file_formats.common import Comments
 
 from hftools.file_formats.hdf5.v_01 import save_hdf5 as save_hdf5_v01
@@ -68,12 +70,17 @@ class Test_hdf5_specific(TestCase):
         fname.unlink()
 
 
+class Test_read_hdf5_handle(TestCase):
+    def test1(self):
+        self.assertRaises(IOError, v_02.read_hdf5_handle, "unknown.hdf5")
+
 # There is no point to make tests based on Test_2 and Test_3 as they are
 # dB/arg, mag/arg
 
 
 class Test_hdf5_data_save(TestCase):
     savefun = [savefun]
+
     @classmethod
     def setUpClass(cls):
         p = path(testpath / "testdata/hdf5/v02/savetest")
@@ -83,6 +90,8 @@ class Test_hdf5_data_save(TestCase):
     @classmethod
     def tearDownClass(cls):
         p = path(testpath / "testdata/hdf5/v02/savetest")
+        for f in p.glob("*"):  # pragma: no cover
+            f.unlink()
         p.removedirs()
 
     def test_1(self):
@@ -183,6 +192,33 @@ class Test_hdf5_data_save(TestCase):
         self.assertEqual(d2.b.unit, "V")
         fname.unlink()
 
+    def test_10(self):
+        d = DataBlock()
+        d.comments = Comments(["Hej=10"])
+#        import pdb;pdb.set_trace()
+        d.b = hfarray([2], dims=(DimSweep("a", 1), ), unit="V")
+        d.b.outputformat = ""
+        fname = testpath / "testdata/hdf5/v02/savetest/res_10.hdf5"
+        self.savefun[0](d, fname)
+        d2 = readfun(fname)
+        self.assertEqual(d2.b.outputformat, "%d")
+
+        fname.unlink()
+
+    def test_11(self):
+        ia = DimSweep("a", 1)
+        d = DataBlock()
+        d.comments = Comments(["Hej=10"])
+#        import pdb;pdb.set_trace()
+        d.b = hfarray([u"kalle"], dims=(ia, ), unit="V")
+        d.c = hfarray(u"kalle")
+        fname = testpath / "testdata/hdf5/v02/savetest/res_11.hdf5"
+        self.savefun[0](d, fname)
+        d2 = readfun(fname)
+        self.assertEqual(d2.b[0], u"kalle")
+        self.assertEqual(d2.c, u"kalle")
+        fname.unlink()
+
 
 class Test_hdf5_main_data_save(Test_hdf5_data_save):
     savefun = [lambda d, x: hdf5.save_hdf5(d, x, version="0.2")]
@@ -201,32 +237,90 @@ class Test_hdf5_data_expandable(TestCase):
         p.removedirs()
 
     def test_1(self):
-        i1 = DimSweep("a", 1)
+        i1 = DimSweep("a", 1, unit="s", outputformat="")
         i2 = DimSweep("INDEX", 2)
         d1 = DataBlock()
-        d1.b = hfarray([2], dims=(DimSweep("a", 1),))
+        d1.b = hfarray([2], dims=(i1,), outputformat="")
         d2 = DataBlock()
-        d2.b = hfarray([3], dims=(DimSweep("a", 1),))
+        d2.b = hfarray([3], dims=(i1,))
         fname = testpath / "testdata/hdf5/v02/savetest/res_1.hdf5"
         with hdf5context(fname, mode="w") as fil:
             savefun(d1, fil, expandable=True)
             append_hdf5(d2, fil)
         d = readfun(fname)
         self.assertAllclose(hfarray([[2, 3]], dims=(i1, i2)), d.b)
+        self.assertEqual(d.ivardata["a"].unit, "s")
+        self.assertEqual(d.ivardata["a"].outputformat, "%d")
+        self.assertEqual(d.b.outputformat, "%d")
         fname.unlink()
 
-    def test_wrong_version(self):
-        i1 = DimSweep("a", 1)
-        i2 = DimSweep("INDEX", 2)
+    def test_2(self):
+        i1 = DimSweep("a", 1, unit="s", outputformat="")
+        i2 = DimSweep("INDEX", 2, unit="s")
+        iexpand = DimRep("INDEX", 1, unit="s", outputformat="")
         d1 = DataBlock()
-        d1.b = hfarray([2], dims=(DimSweep("a", 1),))
+        d1.b = hfarray([2], dims=(i1,), outputformat="")
+        d1.c = hfarray(3)
         d2 = DataBlock()
-        d2.b = hfarray([3], dims=(DimSweep("a", 1),))
+        d2.b = hfarray([3], dims=(i1,))
+        d2.c = hfarray(2)
+        fname = testpath / "testdata/hdf5/v02/savetest/res_1.hdf5"
+        with hdf5context(fname, mode="w") as fil:
+            savefun(d1, fil, expandable=True, expanddim=iexpand)
+            append_hdf5(d2, fil, expanddim=iexpand)
+        d = readfun(fname)
+        self.assertAllclose(hfarray([[2, 3]], dims=(i1, i2)), d.b)
+        self.assertAllclose(hfarray([3, 2], dims=(i2,)), d.c)
+        self.assertEqual(d.ivardata["a"].unit, "s")
+        self.assertEqual(d.ivardata["INDEX"].unit, "s")
+        self.assertEqual(d.ivardata["a"].outputformat, "%d")
+        self.assertEqual(d.ivardata["INDEX"].outputformat, "%d")
+        self.assertEqual(d.b.outputformat, "%d")
+        fname.unlink()
+
+    def test_cant_append(self):
+        i1 = DimSweep("a", 1, unit="s", outputformat="")
+        i2 = DimSweep("INDEX", 2, unit="s")
+        iexpand = DimRep("INDEX", 1, unit="s", outputformat="")
+        d1 = DataBlock()
+        d1.b = hfarray([2], dims=(i1,), outputformat="")
+        d1.c = hfarray(3)
+        d2 = DataBlock()
+        d2.b = hfarray([3], dims=(i1,))
+        fname = testpath / "testdata/hdf5/v02/savetest/res_1.hdf5"
+        with hdf5context(fname, mode="w") as fil:
+            savefun(d1, fil, expandable=True, expanddim=iexpand)
+            self.assertRaises(ValueError, append_hdf5, d2, fil)
+        fname.unlink()
+
+
+
+
+    def test_wrong_version_1(self):
+        ia = DimSweep("a", 1, unit="")
+        d1 = DataBlock()
+        d1.b = hfarray([2], dims=(ia,))
+        d2 = DataBlock()
+        d2.b = hfarray([3], dims=(ia,))
         fname = testpath / "testdata/hdf5/v02/savetest/res_1.hdf5"
 
         with hdf5context(fname, mode="w") as fil:
             save_hdf5_v01(d1, fil)
-            self.assertRaises(KeyError, append_hdf5, d2, fil)
+            self.assertRaises(Exception, append_hdf5, d2, fil)
+#            append_hdf5(d2, fil)
+        fname.unlink()
+
+    def test_wrong_version_2(self):
+        ia = DimSweep("a", 1, unit="")
+        d1 = DataBlock()
+        d1.b = hfarray([2], dims=(ia,))
+        d2 = DataBlock()
+        d2.b = hfarray([3], dims=(ia,))
+        fname = testpath / "testdata/hdf5/v02/savetest/res_1.hdf5"
+
+        with hdf5context(fname, mode="w") as fil:
+            save_hdf5_v01(d1, fil)
+            self.assertRaises(Exception, append_hdf5, d2, fil)
 #            append_hdf5(d2, fil)
         fname.unlink()
 

@@ -8,8 +8,10 @@ import sys
 
 if sys.version_info[0] >= 3:
     import unittest
+    configpath = "coverage-config-PY3.txt"
 else:
     import unittest2 as unittest
+    configpath = "coverage-config-PY2.txt"
 
 
 pjoin = os.path.join
@@ -39,7 +41,7 @@ def main():
         try:
             import coverage
             cover_config = os.path.join(os.path.split(__file__)[0],
-                                        "coverage-config.txt")
+                                        configpath)
             cov = coverage.coverage(source=["hftools"], omit=omit,
                                     config_file=cover_config)
             cov.start()
