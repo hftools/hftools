@@ -374,7 +374,7 @@ class _hfarray(ndarray):
         if info is not None:
             deprecate("hfarray, use dims not info")
             if dims is not None:
-                raise Exception("Can not specify both info and dims")
+                raise ValueError("Can not specify both info and dims")
             dims = info
 
         # Make sure we are working with an array, and copy the data
@@ -655,29 +655,24 @@ class _hfarray(ndarray):
             idx = (slice(None), ) * len(reorder) + (indices[0],)
             return hfarray(ndarray.__getitem__(reordered, idx), dims=dims)
 
-        try:
-            indices = indices + (slice(None),) * (self.ndim - len(indices))
-            dims = []
-            dim_in_indices = dict((x.dims[0].name, x.dims[0]) for x in indices
-                                  if isinstance(x, hfarray))
-            for idx, dim in zip(indices, self.dims):
-                if isinstance(idx, integer_types):
-                    continue
-                elif isinstance(idx, slice):
-                    dims.append(dim[idx])
-                else:
-                    dims.append(dim_in_indices.get(dim.name, dim))
-            if ellipsis_and_ints:
-                indices = orig_indices
-            out = ndarray.__getitem__(self, indices)
-            if isinstance(out, ndarray):
-                return self.__class__(out, dims=dims, copy=False)
+        indices = indices + (slice(None),) * (self.ndim - len(indices))
+        dims = []
+        dim_in_indices = dict((x.dims[0].name, x.dims[0]) for x in indices
+                              if isinstance(x, hfarray))
+        for idx, dim in zip(indices, self.dims):
+            if isinstance(idx, integer_types):
+                continue
+            elif isinstance(idx, slice):
+                dims.append(dim[idx])
             else:
-                return out
-        except HFArrayShapeDimsMismatchError:
-            warn("WARNING mismatch")
-            out = ndarray.__getitem__(self, indices)
-            return out.view(type=ndarray, dtype=self.dtype)
+                dims.append(dim_in_indices.get(dim.name, dim))
+        if ellipsis_and_ints:
+            indices = orig_indices
+        out = ndarray.__getitem__(self, indices)
+        if isinstance(out, ndarray):
+            return self.__class__(out, dims=dims, copy=False)
+        else:
+            return out
 
     @check_instance
     def __and__(self, other):

@@ -534,7 +534,7 @@ class Test_hfarray_1(_Test_hfarray):
         self.assertRaises(aobj.HFArrayShapeDimsMismatchError,
                           self.a.verify_dimension)
 
-    def test_info_deprecation(self):
+    def test_info_deprecation_1(self):
         a = aobj.hfarray(1)
         reset_hftools_warnings()
         self.assertHFToolsDeprecationWarning(lambda x: x.info, a)
@@ -542,7 +542,30 @@ class Test_hfarray_1(_Test_hfarray):
             warnings.resetwarnings()
             warnings.simplefilter("ignore", HFToolsDeprecationWarning)
             a.info
-##        reset_hftools_warnings()
+
+    def test_set_info_deprecation_1(self):
+        a = aobj.hfarray(1)
+        reset_hftools_warnings()
+        self.assertHFToolsDeprecationWarning(setattr, a, "info", ())
+        with warnings.catch_warnings():
+            warnings.resetwarnings()
+            warnings.simplefilter("ignore", HFToolsDeprecationWarning)
+            a.info = ()
+
+    def test_info_deprecation_2(self):
+        reset_hftools_warnings()
+        self.assertHFToolsDeprecationWarning(aobj.hfarray, 1, info=())
+        with warnings.catch_warnings():
+            warnings.resetwarnings()
+            warnings.simplefilter("ignore", HFToolsDeprecationWarning)
+            aobj.hfarray(1, info=())
+
+    def test_info_deprecation_3(self):
+        reset_hftools_warnings()
+        with warnings.catch_warnings():
+            warnings.resetwarnings()
+            warnings.simplefilter("ignore", HFToolsDeprecationWarning)
+            self.assertRaises(ValueError, aobj.hfarray, 1, info=(), dims=())
 
     def test_dims_index_1(self):
         self.assertEqual(self.a.dims_index("f"), 0)
@@ -571,6 +594,18 @@ class Test_hfarray_1(_Test_hfarray):
         self.assertRaises(IndexError, self.b.dims_index, "f", aobj.DimMatrix_i)
         self.assertRaises(IndexError, self.b.dims_index, "i", aobj.DimSweep)
         self.assertRaises(IndexError, self.b.dims_index, "j", aobj.DimSweep)
+
+    def test_info_index_deprecated(self):
+        reset_hftools_warnings()
+        x = aobj.hfarray([1,2], dims=(aobj.DimSweep("a", 2),))
+        self.assertHFToolsDeprecationWarning(x.info_index, "a", aobj.DimSweep)
+        with warnings.catch_warnings():
+            warnings.resetwarnings()
+            warnings.simplefilter("ignore", HFToolsDeprecationWarning)
+            x.info_index("a", aobj.DimSweep)
+
+
+
 
     def test_help_1(self):
         self.a.help()
@@ -609,11 +644,100 @@ class Test_hfarray_1(_Test_hfarray):
         a = self.h.squeeze()
         self.assertEqual(a.dims, (self.fi, self.gi))
 
+    def test_outpformat_at_init_int(self):
+        a = aobj.hfarray(1)
+        self.assertEqual(a.outputformat, "%d")
+
+    def test_outpformat_at_init_float(self):
+        a = aobj.hfarray(1.2)
+        self.assertEqual(a.outputformat, "%.16e")
+
+    def test_outpformat_at_init_datetime(self):
+        a = aobj.hfarray("2012-02-02 08:30", dtype="datetime64[us]")
+        self.assertEqual(a.outputformat, "%s")
+
+    def test_outpformat_at_init_other(self):
+        a = aobj.hfarray(bool)
+        self.assertEqual(a.outputformat, "%s")
+
 
 class Test_hfarray_getitem(_Test_hfarray):
     def test_getitem_1(self):
         q = self.a[...]
         self.assertEqual(q.__array_interface__, self.a.__array_interface__)
+
+    def test_get_bool_1(self):
+        a = aobj.DimSweep("a", [1, 2, 3])
+        A = aobj.hfarray([10, 20, 30], dims=(a, ))
+        ar = aobj.DimSweep("a", [2, 3])
+        Ar = aobj.hfarray([20, 30], dims=(ar, ))
+        bools = A > 10
+        self.assertAllclose(A[bools], Ar)
+
+    def test_get_bool_2(self):
+        a = aobj.DimSweep("a", [1, 2])
+        b = aobj.DimSweep("b", [1, 2, 3])
+        c = aobj.DimSweep("c", [1, 2, 3, 4])
+        A = aobj.hfarray([1, 2], dims=(a, ))
+        B = aobj.hfarray([10, 20, 30], dims=(b, ))
+        C = aobj.hfarray([100, 200, 300, 400], dims=(c, ))
+        ABC = A + B + C
+        self.assertAllclose(ABC[A == 1].squeeze(), 1 + B + C)
+        self.assertAllclose(ABC[B == 20].squeeze(), A + 20 + C)
+        self.assertAllclose(ABC[C == 300].squeeze(), A + B + 300)
+        self.assertRaises(ValueError, C.__getitem__, A == 1)
+
+
+class Test_hfarray_take(_Test_hfarray):
+    def test_take(self):
+        a = aobj.DimSweep("a", [1, 2])
+        b = aobj.DimSweep("b", [1, 2, 3])
+        c = aobj.DimSweep("c", [1, 2, 3, 4])
+        A = aobj.hfarray([1, 2], dims=(a, ))
+        B = aobj.hfarray([10, 20, 30], dims=(b, ))
+        C = aobj.hfarray([100, 200, 300, 400], dims=(c, ))
+        ABC = A + B + C
+        anon = aobj.DimAnonymous("anon1", [0, 1, 2])
+        self.assertAllclose(ABC.take([0, 1, 2]),
+                            aobj.hfarray([111, 211, 311],
+                                         dims=(anon, )))
+
+
+class Test_hfarray_matrix(_Test_hfarray):
+    def test_t_1(self):
+        a = aobj.DimSweep("freq", [1, 2, 3])
+        i = aobj.DimMatrix_i("i", 2)
+        j = aobj.DimMatrix_j("j", 2)
+        A = aobj.hfarray(np.zeros((3, 2, 2), dtype=np.complex128), dims=(a, i, j))
+        A[:, 0, 0] = [11, 110, 1100]
+        A[:, 0, 1] = [12, 120, 1200]
+        A[:, 1, 0] = [21, 210, 2100]
+        A[:, 1, 1] = [22, 220, 2200]
+        At = A.t
+        self.assertAllclose(A[:, 0, 0], At[:, 0, 0])
+        self.assertAllclose(A[:, 0, 1], At[:, 1, 0])
+        self.assertAllclose(A[:, 1, 0], At[:, 0, 1])
+        self.assertAllclose(A[:, 1, 1], At[:, 1, 1])
+
+    def test_t_2(self):
+        a = aobj.DimSweep("freq", [1, 2, 3])
+        i = aobj.DimMatrix_i("i", 2)
+        j = aobj.DimMatrix_j("j", 2)
+        A = aobj.hfarray(np.zeros((3, 2,), dtype=np.complex128), dims=(a, i,))
+        A[:, 0] = [11, 110, 1100]
+        A[:, 1] = [22, 220, 2200]
+        At = A.t
+        self.assertAllclose(A, At)
+
+    def test_t_3(self):
+        a = aobj.DimSweep("freq", [1, 2, 3])
+        i = aobj.DimMatrix_i("i", 2)
+        j = aobj.DimMatrix_j("j", 2)
+        A = aobj.hfarray(np.zeros((3, 2,), dtype=np.complex128), dims=(a, j,))
+        A[:, 0] = [11, 110, 1100]
+        A[:, 1] = [22, 220, 2200]
+        At = A.t
+        self.assertAllclose(A, At)
 
 
 class Test_rss_method(_Test_hfarray):
@@ -856,6 +980,28 @@ class Test_replace_dim(TestCase):
         AB.replace_dim("a", aobj.DimRep)
         self.assertEqual(AB.dims, (aj, bi))
 
+
+class Test_add_dim(TestCase):
+    def setUp(self):
+        self.ai = aobj.DimSweep("a", [1, 2, 3])
+        self.bi = aobj.DimSweep("b", [1, 2])
+        self.A = aobj.hfarray(self.ai)
+        self.B = aobj.hfarray(self.bi)
+
+    def test_1(self):
+        res = self.A.add_dim(self.ai)
+        self.assertIs(res, self.A)
+
+    def test_2(self):
+        res = self.A.add_dim(None)
+        self.assertIs(res, self.A)
+
+    def test_3(self):
+        res = self.A.add_dim(self.bi)
+        facit = self.B + self.A
+        facit[0] = self.A
+        facit[1] = self.A
+        self.assertAllclose(res, facit)
 
 if __name__ == '__main__':
     def test_1(methodname="argsort", **kw):

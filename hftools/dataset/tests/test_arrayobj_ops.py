@@ -26,6 +26,7 @@ class VArray(aobj.hfarray):
 
 class Test_binary_ops(TestCase):
     op = operator.add
+    randfunc = [random_value_array_from_dims]
 
     def setUp(self):
         self.fi = aobj.DimSweep("f", 3)
@@ -41,57 +42,49 @@ class Test_binary_ops(TestCase):
         self.assertIsInstance(res_v, v1.__class__)
 
     def test_1(self):
-        v1 = VArray(random_value_array_from_dims((self.fi, self.gi, self.ri),
-                    mean=10))
-        v2 = (random_value_array_from_dims((self.ri,), mean=10))
+        v1 = VArray(self.randfunc[0]((self.fi, self.gi, self.ri), mean=10))
+        v2 = (self.randfunc[0]((self.ri,), mean=10))
         a1 = np.array(v1)
         a2 = np.array(v2)
         self._check(v1, v2, a1, a2)
 
     def test_2(self):
-        v1 = VArray(random_value_array_from_dims((self.fi, self.gi, self.ri),
-                    mean=10))
-        v2 = (random_value_array_from_dims((self.gi,), mean=10))
+        v1 = VArray(self.randfunc[0]((self.fi, self.gi, self.ri), mean=10))
+        v2 = (self.randfunc[0]((self.gi,), mean=10))
         a1 = np.array(v1)
         a2 = np.array(v2)[:, newaxis]
         self._check(v1, v2, a1, a2)
 
     def test_3(self):
-        v1 = VArray(random_value_array_from_dims((self.fi, self.ri, self.gi),
-                    mean=10))
-        v2 = (random_value_array_from_dims((self.ri, self.fi), mean=10))
+        v1 = VArray(self.randfunc[0]((self.fi, self.ri, self.gi), mean=10))
+        v2 = (self.randfunc[0]((self.ri, self.fi), mean=10))
         a1 = np.array(v1).transpose(0, 2, 1)
         a2 = np.array(v2).transpose()[:, newaxis]
         self._check(v1, v2, a1, a2)
 
     def test_4(self):
-        v1 = (random_value_array_from_dims((self.fi, self.gi, self.ri),
-                                           mean=10))
-        v2 = VArray(random_value_array_from_dims((self.ri,),
-                                                 mean=10))
+        v1 = (self.randfunc[0]((self.fi, self.gi, self.ri), mean=10))
+        v2 = VArray(self.randfunc[0]((self.ri,), mean=10))
         a1 = np.array(v1)
         a2 = np.array(v2)
         self._check(v1, v2, a1, a2)
 
     def test_5(self):
-        v1 = (random_value_array_from_dims((self.fi, self.gi, self.ri),
-                                           mean=10))
-        v2 = VArray(random_value_array_from_dims((self.gi,), mean=10))
+        v1 = (self.randfunc[0]((self.fi, self.gi, self.ri), mean=10))
+        v2 = VArray(self.randfunc[0]((self.gi,), mean=10))
         a1 = np.array(v1).transpose(1, 0, 2)
         a2 = np.array(v2)[:, newaxis, newaxis]
         self._check(v1, v2, a1, a2)
 
     def test_6(self):
-        v1 = (random_value_array_from_dims((self.fi, self.ri, self.gi),
-                                           mean=10))
-        v2 = VArray(random_value_array_from_dims((self.ri, self.fi), mean=10))
+        v1 = (self.randfunc[0]((self.fi, self.ri, self.gi), mean=10))
+        v2 = VArray(self.randfunc[0]((self.ri, self.fi), mean=10))
         a1 = np.array(v1).transpose(0, 2, 1)
         a2 = np.array(v2).transpose()[:, newaxis]
         self._check(v1, v2, a1, a2)
 
     def test_7(self):
-        v1 = VArray(random_value_array_from_dims((self.fi, self.gi, self.ri),
-                    mean=10))
+        v1 = VArray(self.randfunc[0]((self.fi, self.gi, self.ri), mean=10))
         v2 = 5.
         a1 = np.array(v1)
 
@@ -107,11 +100,41 @@ class Test_binary_ops_mul(Test_binary_ops):
 
 
 class Test_binary_ops_div(Test_binary_ops):
+    op = operator.div
+
+
+class Test_binary_ops_tdiv(Test_binary_ops):
     op = operator.truediv
 
 
 class Test_binary_ops_pow(Test_binary_ops):
     op = operator.pow
+
+
+def rand_bool(dims, mean):
+    values = random_value_array_from_dims(dims, mean=mean)
+    values = abs(values).astype(np.int32)
+    return values
+
+
+class Test_binary_ops_and(Test_binary_ops):
+    op = operator.and_
+    randfunc = [rand_bool]
+
+    def test_7(self):
+        v1 = VArray(self.randfunc[0]((self.fi, self.gi, self.ri), mean=10))
+        v2 = 5
+        a1 = np.array(v1)
+
+        self._check(v1, v2, a1, v2)
+
+
+class Test_binary_ops_or(Test_binary_ops_and):
+    op = operator.or_
+
+
+class Test_binary_ops_xor(Test_binary_ops_and):
+    op = operator.xor
 
 
 if __name__ == '__main__':
