@@ -413,7 +413,7 @@ class _hfarray(ndarray):
                 subarr.outputformat = "%d"
             elif is_numlike(subarr):
                 subarr.outputformat = "%.16e"
-            elif np.issubdtype(subarr.dtype, "datetime64"):
+            elif np.issubdtype(subarr.dtype, np.datetime64):
                 subarr.outputformat = "%s"
             else:
                 subarr.outputformat = "%s"
