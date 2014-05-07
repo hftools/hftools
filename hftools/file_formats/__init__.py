@@ -6,6 +6,8 @@
 #
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
+# pylint: disable=unused-import
+# pyflake: disable=W0611
 
 
 """
@@ -34,7 +36,8 @@ from hftools.file_formats.touchstone import read_touchstone, save_touchstone,\
 from hftools.file_formats.citi import read_citi, save_citi, is_citi,\
     CITIFileError
 from hftools.file_formats.spdata import read_spdata, save_spdata
-from hftools.file_formats.hdf5 import read_hdf5, save_hdf5, is_hdf5
+from hftools.file_formats.hdf5 import read_hdf5, save_hdf5, is_hdf5,\
+    append_hdf5
 from hftools.file_formats.muwave_mat import read_muwave_matlabdata,\
     is_muwave_matlabdata
 from hftools._external import path
