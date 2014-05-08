@@ -1,0 +1,5 @@
+!Date: 2010-04-20
+!Power[dBm]: 1.1
+!Fullcomments
+freq	kalle
+1	2

@@ -24,26 +24,19 @@ psplit = os.path.split
 
 def main():
     omit = ["hftools/_external/*.py"]
+    omit = None
     if "--coverage" in sys.argv:
         docoverage = True
         del sys.argv[sys.argv.index("--coverage")]
     else:
         docoverage = False
-    for root, dirs, files in os.walk('.'):
-        omit.extend(os.path.join(root, f) for f in files
-                    if os.path.split(root)[1] in ["tests", "testing"])
-    for root, dirs, files in os.walk(os.path.split(__file__)[0]):
-        omit.extend(os.path.join(root, f) for f in files
-                    if os.path.split(root)[1] in ["tests", "testing"])
-
-    omit = []
 
     if docoverage:
         try:
             import coverage
             cover_config = os.path.join(os.path.split(__file__)[0],
                                         configpath)
-            cov = coverage.coverage(source=["hftools"], omit=omit,
+            cov = coverage.coverage(source=["hftools"],
                                     config_file=cover_config)
             cov.start()
         except ImportError:

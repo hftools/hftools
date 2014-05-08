@@ -81,7 +81,7 @@ dateregexp = re.compile("^[0-9]{4}-[01][0-9]-[0123][0-9]"
                         "[ \t]*[0-9]{2}:[0-9]{2}(:[0-9]{2})?$")
 
 
-def to_numeric(value, error=False):
+def to_numeric(value, error=True):
     """Translate string *value* to numeric type if possible
     """
     try:
@@ -97,13 +97,11 @@ def to_numeric(value, error=False):
             try:
                 if dateregexp.match(value):
                     return np.datetime64(value)
-                elif value == "":
+                else:
                     raise ValueError
             except (ValueError, TypeError):
                 if error:
                     raise
-                else:
-                    return value
     return value
 
 
@@ -154,7 +152,7 @@ reg_split = re.compile("[^0-9]+|[0-9]+")
 
 
 def split_num(string):
-    return list(map(to_numeric, reg_split.findall(string))), string
+    return [to_numeric(x, False) for x in reg_split.findall(string)], string
 
 
 def lex_order(lista):

@@ -108,12 +108,6 @@ reg_comment = re.compile(r"\s*(.*?)\s*([[]([%\w\d:=_]+)[]])?"
 reg_comment_all = re.compile(r"\s*(.*?)\s*([[]([%\w\d:=_#\s/]+)[]])?"
                              r"\s*[:=]\s*(.+)")
 
-for rad in _examples.split("\n"):
-    if reg_comment_all.match(rad) is None:
-        res = reg_comment.match(rad)
-        if res:
-            print(res.groups(), rad)
-
 
 def convert(convertors=[], *vars):
     for convfun in convertors:
@@ -138,27 +132,16 @@ if hasattr(np, "datetime64"):
         else:
             raise ValueError
 
-    def conv_time(value):
-        value = " ".join(value.strip().split())
-        if reg_time.match(value):
-            return np.datetime64(value)
-        else:
-            raise ValueError
-
     def conv_date_time(value):
         value = " ".join(value.strip().split())
         if reg_datetime.match(value):
             return np.datetime64(value)
         else:
             raise ValueError
-else:
+else:  # pragma: no coverage:
     def conv_date(value):
         timestamp = time.mktime(time.strptime(value, "%Y-%m-%d"))
         return datetime.date.fromtimestamp(timestamp)
-
-    def conv_time(value):
-        timestamp = time.mktime(time.strptime(value, "%H:%M:%S"))
-        return datetime.time.fromtimestamp(timestamp)
 
     def conv_date_time(value):
         value = " ".join(value.strip().split())
@@ -176,8 +159,7 @@ def process_comment(comment):
                 value = convert([string_number_with_unit_to_value,
                                  to_numeric,
                                  conv_date_time,
-                                 conv_date,
-                                 conv_time], value)
+                                 conv_date], value)
             except ValueError:
                 pass
         else:
@@ -306,6 +288,8 @@ def normalize_names(data):
     """
     out = data.copy()
     for old, new in _trtable.items():
+        if old in data and new in data:
+            continue
         out.rename(old, new)
     meantr = remove_enclosing_function("Mean")
     stdtr = remove_enclosing_function("Std", "s_%s")

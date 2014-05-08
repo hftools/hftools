@@ -22,4 +22,5 @@ exclude_lines =
     if __name__ == .__main__.:
     if self\.verbose:
 
+omit = hftools/_external/*.py
 ignore_errors = True

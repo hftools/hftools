@@ -29,7 +29,7 @@ class Test_to_numeric(TestCase):
         self.assertEqual(utils.to_numeric("1"), 1)
 
     def test_cplx_1(self):
-        self.assertEqual(utils.to_numeric("1+1j"), "1+1j")
+        self.assertEqual(utils.to_numeric("1+1j", False), "1+1j")
 
     def test_date_1(self):
         self.assertEqual(utils.to_numeric("2012-05-30 10:34:00"),
@@ -40,13 +40,16 @@ class Test_to_numeric(TestCase):
                          np.datetime64("2012-05-30 10:34:00"))
 
     def test_nonnumeric_1(self):
-        self.assertEqual(utils.to_numeric("a1.2"), "a1.2")
+        self.assertEqual(utils.to_numeric("a1.2", False), "a1.2")
 
     def test_nonnumeric_2(self):
-        self.assertEqual(utils.to_numeric(""), "")
+        self.assertEqual(utils.to_numeric("", False), "")
 
     def test_raises_1(self):
         self.assertRaises(ValueError, utils.to_numeric, "", True)
+
+    def test_raises_2(self):
+        self.assertRaises(ValueError, utils.to_numeric, "")
 
 
 class Test_stable_uniq(TestCase):

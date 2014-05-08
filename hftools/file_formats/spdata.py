@@ -68,11 +68,8 @@ class ReadSPFileFormat(ReadFileFormat):
             lineno = radidx + 1
             if not rad:  # skip empty lines
                 continue
-            elif ((rad.startswith("!Fullcomments") or
-                   rad.startswith("!PROPERTIES"))):
+            elif rad.startswith("!Fullcomments"):
                 continue
-            elif rad.startswith("!END-PROPERTIES"):
-                yield Token("ENDPROP", lineno, rad)
             elif rad.startswith("!"):  # Comment line with information
                 yield Token("Comment", lineno, rad[1:])
             elif reg_header.match(rad[0]):
@@ -97,13 +94,6 @@ class ReadSPFileFormat(ReadFileFormat):
                     token, lineno, rad = next(stream)
                 except StopIteration:
                     raise SPDataIOError("File can not end in comments")
-            if token == "ENDPROP":
-                yield out
-                try:
-                    token, lineno, rad = next(stream)
-                except StopIteration:
-                    running = False
-                continue
             if token == "Header":
                 header.append(rad)
                 try:
@@ -124,34 +114,33 @@ class ReadSPFileFormat(ReadFileFormat):
         for comments, header, data in stream:
             db = DataBlock()
             db.comments = Comments(comments)
-            if header and data:
-                header = header[0].strip().split("\t")
-                Nhead = len(header)
-                #data = np.array(data)
-                if Nhead != len(data[0]):
-                    msg = "Different number of header variables "\
-                          "from data columns"
-                    raise SPDataIOError(msg)
-                output = DataDict()
-                for varname, column in zip(header, zip(*data)):
-                    output.setdefault(varname, []).append(column)
-                for varname in output:
-                    data = output[varname]
-                    if len(data) > 1:
-                        output[varname] = np.array(output[varname],
-                                                   order="F").T
-                    else:
-                        output[varname] = np.array(output[varname][0])
+            header = header[0].strip().split("\t")
+            Nhead = len(header)
+            #data = np.array(data)
+            if Nhead != len(data[0]):
+                msg = "Different number of header variables "\
+                      "from data columns"
+                raise SPDataIOError(msg)
+            output = DataDict()
+            for varname, column in zip(header, zip(*data)):
+                output.setdefault(varname, []).append(column)
+            for varname in output:
+                data = output[varname]
+                if len(data) > 1:
+                    output[varname] = np.array(output[varname],
+                                               order="F").T
+                else:
+                    output[varname] = np.array(output[varname][0])
 
-                freq = DimSweep(header[0], output[header[0]])
-                db[header[0]] = freq
-                for x in output.keys()[1:]:
-                    if output[x].ndim == 1:
-                        db[x] = hfarray(output[x], dims=(freq,))
-                    else:
-                        repdim = DimRep("rep", output[x].shape[1])
-                        db[x] = hfarray(output[x],
-                                        dims=(freq, repdim)).squeeze()
+            freq = DimSweep(header[0], output[header[0]])
+            db[header[0]] = freq
+            for x in output.keys()[1:]:
+                if output[x].ndim == 1:
+                    db[x] = hfarray(output[x], dims=(freq,))
+                else:
+                    repdim = DimRep("rep", output[x].shape[1])
+                    db[x] = hfarray(output[x],
+                                    dims=(freq, repdim)).squeeze()
 
             remove = []
             for vname in db.comments.property:
@@ -168,29 +157,8 @@ class ReadSPFileFormat(ReadFileFormat):
 
 
 def format_sp_block(sweepvars, header, fmts, columns, blockname, comments):
-    if comments:
-        com_added = False
-        if comments.fullcomments and comments.property:
-            yield ["!Fullcomments"]
-        for comment in comments.fullcomments:
-            yield ["!" + comment.lstrip("!")]
-        if comments.property:
-            pass
-            #yield ["!PROPERTIES"]
-        for k, v in comments.property.items():
-            if v.unit:
-                args = (v.outputformat[1:],)
-                vfmt = "%%(name)s [%%(unit)s]: %%(value)%s" % args
-            else:
-                vfmt = "%%(name)s: %%(value)%s" % (v.outputformat[1:], )
-            vname = vfmt % dict(name=k, unit=v.unit, value=v)
-            com_added = True
-            yield ["!%s" % vname]
-
-        if (not sweepvars) and com_added:
-            pass
-            #yield ["!END-PROPERTIES"]
-
+    for comment in comments.fullcomments:
+        yield ["!" + comment.lstrip("!")]
     for iname, fmt, value in sweepvars:
         yield [("!@%s=" + fmt) % (iname, value)]
     header, columns = make_col_from_matrix(header, columns, "%s%s%s")
