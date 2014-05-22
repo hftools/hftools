@@ -444,10 +444,11 @@ class _hfarray(ndarray):
         self.dims = value
 
     def __repr__(self):
-        r = ndarray.__repr__(self)
         prefix = " " * (len(self.__class__.__name__) - 5)
+        r = np.asarray(self).__repr__()
         rlist = r.split("\n")
-        out = rlist[:1]
+        out = [rlist[0].replace("array", self.__class__.__name__)]
+
         for rad in rlist[1:]:
             out.append(prefix + rad)
         return "\n".join(out)
