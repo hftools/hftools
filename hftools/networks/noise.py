@@ -13,7 +13,7 @@ from hftools.constants import k
 from hftools.dataset import DimMatrix_j, DimMatrix_i, DataBlock
 from hftools.networks.multiports import SArray, YArray, ABCDArray, ZArray,\
     convert
-from hftools.math import dot
+from hftools.math import matrix_multiply
 
 
 def Hconj(A):
@@ -39,7 +39,7 @@ def passive_noise(twoport, Tamb=290):
     elif isinstance(twoport, SArray):
         eye = hftools.dataset.make_matrix(np.array([[1, 0], [0j, 1]]),
                                           dims=tuple())
-        C = k * Tamb * (eye - dot(twoport, Hconj(twoport)))
+        C = k * Tamb * (eye - matrix_multiply(twoport, Hconj(twoport)))
     else:
         raise Exception("Can only convert passive Y, Z, and S to NoisyTwoport")
     return NoisyTwoport(twoport, C)
@@ -67,7 +67,7 @@ class NoisyTwoport(object):
     def convert(self, dest, Tout=False):
         N = dest(self.N)
         _, T_s2d, _ = convert(self.N.P, N.P, self.N)
-        C = dot(dot(T_s2d, self.C), Hconj(T_s2d))
+        C = matrix_multiply(matrix_multiply(T_s2d, self.C), Hconj(T_s2d))
         C[..., 0, 0] = C[..., 0, 0].real
         C[..., 1, 1] = C[..., 1, 1].real
         if Tout:
