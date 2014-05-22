@@ -17,7 +17,7 @@ TODO:
     * Fixa rename av ivardata.
 
 """
-
+import itertools
 import re
 
 import numpy as np
@@ -31,6 +31,7 @@ from hftools.dataset.dim import DimBase, DimSweep, DimRep,\
 from hftools.utils import warn, stable_uniq
 from hftools.dataset.helper import guess_unit_from_varname
 from hftools.py3compat import cast_unicode, cast_str, string_types
+
 
 class DataBlockError(Exception):
     pass
@@ -196,6 +197,9 @@ class DataBlock(object):
     def __init__(self):
         self.__dict__["_blockname"] = None
         self.__dict__["comments"] = None
+        self.__dict__["report_maxwidth"] = 79
+        self.__dict__["report_units"] = True
+        self.__dict__["report_minmax"] = True
 
         self.__dict__["vardata"] = DataDict()
 
@@ -477,7 +481,7 @@ class DataBlock(object):
         out.replace_dim(olddim, olddim.__class__(olddim, data=data))
         return out
 
-    def var_report(self, name):
+    def ivar_report(self, name):
         #local import to avoid circular import
         from hftools.constants import SIFormat
         try:
@@ -489,37 +493,98 @@ class DataBlock(object):
         tofmt["N"] = "<%s>" % (len(self.ivardata[name].data.flat))
 
         if isnumber:
-            fmt = SIFormat(unit=self.ivardata[name].unit, digs=None)
-            tofmt["max"] = fmt % self.ivardata[name].data.max()
-            tofmt["min"] = fmt % self.ivardata[name].data.min()
-            unit = self.ivardata[name].unit
-            tofmt["unit"] = "[%s]" % (unit if unit is not None else "")
-            fmt = "%(name)-15s %(unit)-5s %(N)-6s min: %(min)13s  "\
-                  "max: %(max)13s "
+            if np.issubdtype(self.ivardata[name].data.dtype, np.int):
+                fmt = "%d "  # space ensures split will give two fields
+            else:
+                fmt = SIFormat(unit=self.ivardata[name].unit, digs=None)
+            tofmt["shape"] = "<%s>" % self.ivardata[name].data.shape[0]
+            if self.report_minmax:
+                value, unit = (fmt % self.ivardata[name].data.max()).split(" ")
+                tofmt["maxvalue"] = value
+                tofmt["maxunit"] = unit
+                value, unit = (fmt % self.ivardata[name].data.min()).split(" ")
+                tofmt["minvalue"] = value
+                tofmt["minunit"] = unit
+            else:
+                if self.report_units:
+                    unit = self.ivardata[name].unit
+                    tofmt["unit"] = "[%s]" % (unit if unit is not None else "")
         else:
             tofmt["dtype"] = "{%-5s}" % self.ivardata[name].data.dtype
-            fmt = "%(name)-15s %(dtype)-5s %(N)-6s"
-        return fmt % tofmt
+        return tofmt
+
+    def format_table(self, tofmts, headers, outheaders=[], alignment=None):
+        colwidths = {x: 0 for x in headers}
+        if alignment is None:
+            alignment = {}
+        for tofmt in tofmts:
+            for head in headers:
+                colwidths[head] = max(len(tofmt.get(head, "")),
+                                      colwidths[head])
+
+        sfmts = ["%%%s%ds" % (alignment.get(head, "-"), colwidths[head])
+                 for head in headers]
+        out = []
+        for tofmt in tofmts:
+            x = []
+            for fmt, k, v in zip(sfmts, headers, outheaders):
+                x.append(fmt % tofmt.get(k, ""))
+            out.append(" ".join(x))
+        return out
 
     def depvar_report(self, name):
         v = self.vardata[name]
-        shape = "<%s>" % ("x".join([str(x) for x in v.shape[:]]))
-        unit = self.vardata[name].unit
-        unit = "[%s]" % (unit if unit is not None else "")
-        return dict(name=name, shape=shape, unit=unit)
+        tofmt = {"name": name}
+        tofmt["shape"] = "<%s>" % ("x".join([str(x) for x in v.shape[:]]))
+        if self.report_units:
+            unit = self.vardata[name].unit
+            unit = "[%s]" % (unit if unit is not None else "")
+            tofmt["unit"] = unit
+        return tofmt
 
-    def report(self):
+    def report(self, report_maxwidth=None):
+        if report_maxwidth is None:
+            report_maxwidth = self.report_maxwidth
         report_strings = [u"Blockname: %s" % self.blockname]
+        ivarrows = []
+        varrows = []
+        alignment = dict(name="-", unit="", shape="",
+                         minvalue="", minunit="-",
+                         maxvalue="", maxunit="-")
+
         if self.ivardata.keys():
-            sweepvars = u"\n".join([self.var_report(name)
-                                   for name in self.ivardata.keys()])
-            report_strings.append(u"sweep vars:\n%s" % sweepvars)
+            ivarrows = [u"Dimensions:"]
+            for row in self.format_table([self.ivar_report(name)
+                                          for name in self.ivardata.keys()],
+                                         ["name", "unit",
+                                          "shape", "minvalue", "minunit",
+                                          "maxvalue", "maxunit", "dtype"],
+                                         ["name", "unit",
+                                          "shape", "min", "",
+                                          "max", "", "dtype"],
+                                         alignment=alignment):
+                ivarrows.append(row)
         if self.vardata:
-            fmt = u"%(name)-15s %(unit)-5s %(shape)-12s "
-            depvars = u"\n".join([fmt % self.depvar_report(name)
-                                  for name in self.vardata])
-            report_strings.append(u"Dependent vars:\n%s" % depvars)
-        return (u"\n\n").join(report_strings)
+            varrows = [u"Variables:"]
+            for row in self.format_table([self.depvar_report(name)
+                                          for name in self.vardata.keys()],
+                                         ["name", "unit", "shape"],
+                                         ["name", "unit", "shape"],
+                                         alignment=alignment):
+                varrows.append(row)
+        ivarlen = max(len(x) for x in ivarrows) if ivarrows else 0
+        varlen = max(len(x) for x in varrows) if varrows else 0
+        if ivarlen + varlen > report_maxwidth:
+            report_strings.extend(ivarrows)
+            report_strings.append("")
+            report_strings.extend(varrows)
+        else:
+            fmt = "%%-%ds - %%-%ds" % (varlen, ivarlen)
+            for var, ivar in itertools.izip_longest(varrows,
+                                                    ivarrows,
+                                                    fillvalue=""):
+                report_strings.append(fmt % (var, ivar))
+        return (u"\n").join(report_strings)
 
     def __str__(self):
         return cast_str(self.report())
