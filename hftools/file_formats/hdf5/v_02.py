@@ -54,7 +54,8 @@ def getvar(db, key):
     else:
         dimcls = dimrep[X.attrs.get("dimtype", "DimSweep")]
         dim = dimcls(X.name.strip("/"), X[...], unit=unit)
-        return hfarray(X.value, dims=(dim,), dtype=dtype, unit=unit)
+        return hfarray(X.value, dims=(dim,), unit=unit,
+                       dtype=dtype, outputformat=outputformat)
 
 
 def create_dataset(db, key, data, expandable=False):
@@ -86,7 +87,8 @@ def read_hdf5_handle(filehandle, **kw):
     if isinstance(filehandle, h5py.File):
         db = DataBlock()
         for k in filehandle:
-            db[k] = getvar(filehandle, k)
+            if "dimtype" not in filehandle[k].attrs:
+                db[k] = getvar(filehandle, k)
         db.comments = Comments()
         return db
     else:
