@@ -7,6 +7,7 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 from __future__ import print_function
+import io
 import itertools
 import re
 
@@ -265,7 +266,7 @@ class ReadFileFormat(object):
     def read_file(cls, filename, make_complex=True, property_to_vars=True,
                   guess_unit=True, normalize=True, make_matrix=False,
                   merge=True, verbose=False, multiple_files=True,
-                  hyper=False, **kw):
+                  hyper=False, encoding="cp1252", **kw):
         obj = cls(make_complex=make_complex, property_to_vars=property_to_vars,
                   guess_unit=guess_unit, normalize=normalize,
                   make_matrix=make_matrix, merge=merge, verbose=verbose,
@@ -287,7 +288,7 @@ class ReadFileFormat(object):
         for idx, fname in enumerate(filenames):
             if verbose:
                 print("\r%-80s\r" % fname.basename(), end="")
-            with open(fname) as fil:
+            with io.open(fname, encoding=encoding) as fil:
                 res = obj.do_file(fil)
                 if multiple_files:
                     #res["FILEINDEX"] = DimPartial("FILEINDEX", [idx])

@@ -16,6 +16,7 @@ SP-Data
     .. autofunction:: normalize_names
 
 """
+import io
 import re
 import numpy as np
 
@@ -174,11 +175,11 @@ def format_sp_block(sweepvars, header, fmts, columns, blockname, comments):
         yield out
 
 
-def save_spdata(db, filename):
+def save_spdata(db, filename, encoding="cp1252"):
     """Write a Datablock to a sp-format file with name filename.
     """
     if isinstance(filename, string_types):
-        fil = open(filename, "w")
+        fil = io.open(filename, "w", encoding=encoding)
     else:
         fil = filename
     for rad in db_iterator(db, format_sp_block):
@@ -191,7 +192,7 @@ def save_spdata(db, filename):
 
 def read_spdata(filnamn, make_complex=True, property_to_vars=True,
                 guess_unit=True, normalize=True, make_matrix=True,
-                merge=True, hyper=False, verbose=False):
+                merge=True, hyper=False, verbose=False, encoding="cp1252"):
     return ReadSPFileFormat.read_file(filnamn, make_complex=make_complex,
                                       property_to_vars=property_to_vars,
                                       guess_unit=guess_unit,
@@ -199,7 +200,8 @@ def read_spdata(filnamn, make_complex=True, property_to_vars=True,
                                       make_matrix=make_matrix,
                                       merge=merge,
                                       verbose=verbose,
-                                      hyper=hyper)
+                                      hyper=hyper,
+                                      encoding=encoding)
 
 
 if __name__ == "__main__":
