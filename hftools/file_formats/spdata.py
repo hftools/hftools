@@ -124,7 +124,7 @@ class ReadSPFileFormat(ReadFileFormat):
                 raise SPDataIOError(msg)
             output = DataDict()
             for varname, column in zip(header, zip(*data)):
-                output.setdefault(varname, []).append(column)
+                output.setdefault(varname.strip(), []).append(column)
             for varname in output:
                 data = output[varname]
                 if len(data) > 1:
@@ -133,8 +133,8 @@ class ReadSPFileFormat(ReadFileFormat):
                 else:
                     output[varname] = np.array(output[varname][0])
 
-            freq = DimSweep(header[0], output[header[0]])
-            db[header[0]] = freq
+            freq = DimSweep(header[0].strip(), output[header[0].strip()])
+            db[header[0].strip()] = freq
             for x in output.keys()[1:]:
                 if output[x].ndim == 1:
                     db[x] = hfarray(output[x], dims=(freq,))
@@ -164,7 +164,8 @@ def format_sp_block(sweepvars, header, fmts, columns, blockname, comments):
         yield [("!@%s=" + fmt) % (iname, value)]
     header, columns = make_col_from_matrix(header, columns, "%s%s%s")
     outheader = format_complex_header(header, columns,
-                                      "%s", "Re(%s)", "Im(%s)")
+                                      "%s", "Re(%s)", "Im(%s)",
+                                      padheader=True)
 
     yield outheader
     fmts = [x.outputformat for x in columns]

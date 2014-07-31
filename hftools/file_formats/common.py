@@ -337,20 +337,30 @@ def format_elem(fmt, elem):
     else:
         return [fmt % elem]
 
+findpad_reg = re.compile("[%][-]?([0-9]+)")
+def padhead(head, width):
+    return head + " " * (max(len(head), width) - len(head))
 
 def format_complex_header(header, columns, floatfmt,
-                          realfmt, imagfmt, unit_fmt=True):
+                          realfmt, imagfmt, unit_fmt=True,
+                          padheader=False):
     outheader = []
     for colname, col in zip(header, columns):
+        res = findpad_reg.match(col.outputformat)
+        if padheader and res:
+            width = int(res.groups()[0])
+        else:
+            width = 0
         if np.iscomplexobj(col):
             value = format_unit_header(realfmt % colname, col, unit_fmt)
-            outheader.append(value)
+
+            outheader.append(padhead(value, width))
             if imagfmt is not None:
                 value = format_unit_header(imagfmt % colname, col, unit_fmt)
-                outheader.append(value)
+                outheader.append(padhead(value, width))
         else:
             value = format_unit_header(floatfmt % colname, col, unit_fmt)
-            outheader.append(value)
+            outheader.append(padhead(value, width))
     return outheader
 
 
