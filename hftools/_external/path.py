@@ -46,12 +46,14 @@ else:
     except ImportError:
         pwd = None
 
-# Pre-2.3 support.  Are unicode filenames supported?
-_base = str
-_getcwd = getcwdu
+if six.PY3:
+    _base = str
+    _getcwd = os.getcwd
+else:
+    _base = unicode
+    _getcwd = os.getcwdu
 
 
-# Pre-2.3 workaround for basestring.
 basestring = six.string_types
 
 
