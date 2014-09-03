@@ -1,4 +1,4 @@
-# -*- coding: ISO-8859-1 -*-
+# -*- coding: utf-8: -*-
 #-----------------------------------------------------------------------------
 # Copyright (c) 2014, HFTools Development Team.
 #
@@ -7,10 +7,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 #-----------------------------------------------------------------------------
 from __future__ import unicode_literals
-import abc
 import imp
 import re
-import sys
 
 import numpy as np
 
@@ -27,8 +25,16 @@ siprefixes = dict(d=0.1, c=0.01,
                   k=1e003, M=1e006, G=1e009,
                   T=1e012, P=1e015, E=1e018)
 siprefixes[""] = 1.
-si_exp_to_prefixes = {0: "", 3: "k", 6: "M", 9: "G", 12: "T", 15: "P", 18: "E", 21: "Z", -24: "Y",
-                      -3: "m", -6: "u", -9: "n", -12: "p", -15: "f", -18: "a", -21: "z", -24: "y"}
+si_exp_to_prefixes = {0: "",
+                      3: "k", 6: "M", 9: "G", 12: "T", 15: "P",
+                      18: "E", 21: "Z", -24: "Y",
+                      -3: "m", -6: "u", -9: "n", -12: "p", -15: "f",
+                      -18: "a", -21: "z", -24: "y"}
+si_exp_to_prefixes_greek = {0: "",
+                            3: "k", 6: "M", 9: "G", 12: "T", 15: "P",
+                            18: "E", 21: "Z", -24: "Y",
+                            -3: "m", -6: "μ", -9: "n", -12: "p", -15: "f",
+                            -18: "a", -21: "z", -24: "y"}
 
 siunit_names = ["Hz", "s", "S", "Ohm", "m", "V", "A", "F", "W"]
 
@@ -90,7 +96,8 @@ def convert_with_unit(unit, value):
     else:
         mul = 1
         unit = None
-    return hftools.dataset.hfarray(to_numeric(value, error=True) * mul, unit=unit)
+    return hftools.dataset.hfarray(to_numeric(value, error=True) * mul,
+                                   unit=unit)
 
 
 def _help_format_sci(value, digs):
@@ -112,7 +119,8 @@ def mantissa(x):
     return mantissavalue, exponent
 
 
-def format_number(number, fmt="%(num)s %(unit)s", unit="", digs=3):
+def format_number(number, fmt="%(num)s %(unit)s",
+                  unit="", digs=3, greek=False):
     if np.isinf(number):
         prefix = ""
         if number > 0:
@@ -126,18 +134,26 @@ def format_number(number, fmt="%(num)s %(unit)s", unit="", digs=3):
         else:
             numfmt = "%%.%df" % digs
             num = numfmt % num
-        prefix = si_exp_to_prefixes[exp]
+        if greek:
+            prefix = si_exp_to_prefixes_greek[exp]
+        else:
+            prefix = si_exp_to_prefixes[exp]
     prefixedunit = "%s%s" % (prefix, unit)
     return fmt % dict(num=num, unit=prefixedunit)
 
 
 class SIFormat(object):
-    def __init__(self, fmt="%(num)s %(unit)s", unit="", digs=3):
+    def __init__(self, fmt="%(num)s %(unit)s", unit="", digs=3, greek=False):
         self.fmt = fmt
+        self.greek = greek
         if unit is None:
             unit = ""
         self.unit = unit
         self.digs = digs
 
     def __mod__(self, value):
-        return format_number(value, self.fmt, self.unit, self.digs)
+        return format_number(value,
+                             fmt=self.fmt,
+                             unit=self.unit,
+                             digs=self.digs,
+                             greek=self.greek)
