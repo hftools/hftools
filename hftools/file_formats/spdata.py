@@ -104,7 +104,7 @@ class ReadSPFileFormat(ReadFileFormat):
             else:
                 raise SPDataIOError("Missing header")
             while running and (token == "Data"):
-                data.append(list(map(to_numeric, rad.split("\t"))))
+                data.append([to_numeric(x, False) for x in rad.split("\t")])
                 try:
                     token, lineno, rad = next(stream)
                 except StopIteration:
