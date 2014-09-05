@@ -208,6 +208,14 @@ class DataBlock(object):
         self.__dict__["_outputformat"] = "%.16e"
         self.__dict__["_xname"] = None
 
+    def keep_variables(self, vars):
+        db = DataBlock()
+        db.blockname = self.blockname
+        for v in vars:
+            if v in self:
+                db[v] = self[v]
+        return db
+
     def replace_dim(self, olddim, newdim):
         if isinstance(olddim, string_types):
             if olddim not in self.ivardata:
