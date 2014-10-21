@@ -17,8 +17,24 @@ from hftools.dataset import make_same_dims_list, hfarray,\
 from hftools.dataset.arrayobj import _hfarray, make_same_dims
 
 
-def angle(z, deg=False):
-    res = np.angle(z, deg)
+def angle(z, deg=False, branch=None):
+    """Like numpy angle but you can specify the starting point for the angle.
+
+        branch = x means the angle will be in the interval [x, x+360[ when
+        deg=True and [x, x+pi[ when deg=False
+    """
+
+    if deg:
+        b = -180 if branch is None else branch
+        B = (b - (-180))
+        b = B / 180. * np.pi
+    else:
+        b = -np.pi if branch is None else branch
+        B = (b - (-np.pi))
+        b = B
+    Z = np.asanyarray(z) / exp(1j * b)
+    res = np.angle(Z, deg)
+    res = res + B
     if isinstance(z, _hfarray):
         return z.__class__(res, dims=z.dims, copy=False)
     return res

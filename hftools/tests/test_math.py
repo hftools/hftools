@@ -38,6 +38,30 @@ class Test_angle(TestCase):
         res = hfmath.angle(self.a, deg=True)
         self.assertAllclose(res, np.array([0, 90, 180, -90]))
 
+    def test_branch_1(self):
+        res = hfmath.angle(self.a, deg=True, branch=0)
+        self.assertAllclose(res, np.array([0, 90, 180, 270]))
+
+    def test_branch_2(self):
+        z = np.exp(1j * np.linspace(0, 2 * np.pi, 721))
+        res = hfmath.angle(z, deg=True)
+        assert np.all((res > -180) & (res <= 180))
+
+    def test_branch_3(self):
+        z = np.exp(1j * np.linspace(0, 2 * np.pi, 721))
+        res = hfmath.angle(z, deg=True, branch=0)
+        assert np.all((res >= 0) & (res <= 360))
+
+    def test_branch_4(self):
+        z = np.exp(1j * np.linspace(0, 2 * np.pi, 721))
+        res = hfmath.angle(z, deg=False)
+        assert np.all((res > -np.pi) & (res <= np.pi))
+
+    def test_branch_5(self):
+        z = np.exp(1j * np.linspace(0, 2 * np.pi, 721))
+        res = hfmath.angle(z, deg=False, branch=0)
+        assert np.all((res >= 0) & (res <= 2 * np.pi))
+
 
 class Test_make_matrix(TestCase):
     def test_make_matrix_1(self):
