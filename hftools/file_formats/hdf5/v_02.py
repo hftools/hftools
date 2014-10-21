@@ -59,6 +59,8 @@ def getvar(db, key):
 
 
 def create_dataset(db, key, data, expandable=False):
+    if "/" in key:
+        raise Exception("/ illegal character for variable name in hdf5 file")
     data_dtype = data.dtype
     if data.ndim:
         if np.issubdtype(data.dtype, np.datetime64):

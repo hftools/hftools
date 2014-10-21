@@ -78,6 +78,30 @@ class Test_read_hdf5_handle(TestCase):
 # dB/arg, mag/arg
 
 
+class Test_hdf5_data_save_exceptions(TestCase):
+    savefun = [savefun]
+
+    @classmethod
+    def setUpClass(cls):
+        p = path(testpath / "testdata/hdf5/v02/savetest")
+        if not p.exists():  # pragma: no cover
+            p.makedirs()
+
+    @classmethod
+    def tearDownClass(cls):
+        p = path(testpath / "testdata/hdf5/v02/savetest")
+        for f in p.glob("*"):  # pragma: no cover
+            f.unlink()
+        p.removedirs()
+
+    def test_1(self):
+        d = DataBlock()
+        d["b/a"] = hfarray([2], dims=(DimSweep("a", 1),))
+        fname = testpath / "testdata/hdf5/v02/savetest/slask.hdf5"
+        self.assertRaises(Exception, self.savefun[0], d, fname)
+        fname.unlink()
+
+
 class Test_hdf5_data_save(TestCase):
     savefun = [savefun]
 
