@@ -192,7 +192,16 @@ def merge_blocks(blocks, hyper=False, indexed=False):
                 ri = (db[tuple(dimpartialgroups[k].keys())[0]].dims[0],)
             else:
                 ri = tuple()
-            value = hfarray(v, dims=ri + v[0].dims, unit=v[0].unit)
+            try:
+                value = hfarray(v, dims=ri + v[0].dims, unit=v[0].unit)
+            except UnicodeError:
+                for x in v:
+                    if np.issubdtype(x.dtype, np.unicode_) and x.shape == ():
+                        x.shape = (1,)
+                q = np.array(v)
+                q.shape = q.shape[:-1]
+                value = hfarray(q, dims=ri + v[0].dims, unit=v[0].unit)
+
             if v[0].dims and isinstance(v[0].dims[0], DimSweep):
                 value = value.reorder_dimensions(v[0].dims[0])
             db[vname] = value
