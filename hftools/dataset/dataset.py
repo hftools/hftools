@@ -249,7 +249,8 @@ class DataBlock(object):
         """Convert numeric properties to values"""
         if self.comments:
             for k, v in self.comments.property.items():
-                if hasattr(v, "dtype") or isinstance(v, (int, float)):
+                if ((hasattr(v, "dtype") or
+                     isinstance(v, (int, float) + string_types))):
                     if (k not in self.vardata) and (k not in self.ivardata):
                         self[k] = hfarray(v)
 
