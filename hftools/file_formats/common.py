@@ -245,6 +245,7 @@ _trtable = {'b1/a1 raw': 'b11',
             'a2/a1': 'a21',
             'a2': 'a22',
             'Freq[Hz]': 'freq',
+            'Frequency': 'freq',
             'Freq': 'freq'}
 
 
