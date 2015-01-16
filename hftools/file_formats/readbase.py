@@ -24,7 +24,7 @@ from hftools.file_formats import merge_blocks
 from hftools.utils import glob
 from hftools import path
 
-reg_outerfun = re.compile(r"^([A-Za-z_][A-Za-z_0-9]*)\((.*)\)(.*)")
+reg_outerfun = re.compile(r"^([A-Za-z_][A-Za-z_0-9]*) *\((.*)\)(.*)")
 
 
 class FileFormatError(Exception):
