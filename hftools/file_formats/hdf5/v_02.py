@@ -29,6 +29,14 @@ dimrep = {"DimRep": DimRep,
           }
 
 
+def escape_varname(x):
+    return x.replace("/", "\\")
+
+
+def unescape_varname(x):
+    return x.replace("\\", "/")
+
+
 def expand_dataset(dataset, expansion, axis):
     dataset.resize(dataset.shape[axis] + expansion, axis=axis)
 
@@ -58,10 +66,7 @@ def getvar(db, key):
                        dtype=dtype, outputformat=outputformat)
 
 
-def create_dataset(db, key, data, expandable=False):
-    if "/" in key:
-        raise Exception("/ illegal character for variable name in hdf5 file")
-    data_dtype = data.dtype
+def cast_arrays_to_hdf5(data):
     if data.ndim:
         if np.issubdtype(data.dtype, np.datetime64):
             data = data.astype(np.uint64)
@@ -72,6 +77,14 @@ def create_dataset(db, key, data, expandable=False):
             data = data.astype(np.uint64)
         elif np.issubdtype(data.dtype, np.unicode_):
             data = data.astype(h5py_string_dtype)
+    return data
+
+
+def create_dataset(db, key, data, expandable=False):
+    if "/" in key:
+        raise Exception("/ illegal character for variable name in hdf5 file")
+    data_dtype = data.dtype
+    data = cast_arrays_to_hdf5(data)
     if expandable:
         if data.ndim in (0, 1):
             maxshape = (None, )
@@ -89,8 +102,9 @@ def read_hdf5_handle(filehandle, **kw):
     if isinstance(filehandle, h5py.File):
         db = DataBlock()
         for k in filehandle:
+            uk = unescape_varname(k)
             if "dimtype" not in filehandle[k].attrs:
-                db[k] = getvar(filehandle, k)
+                db[uk] = getvar(filehandle, k)
         db.comments = Comments()
         return db
     else:
@@ -114,12 +128,13 @@ def save_hdf5_handle(db, filehandle, expandable=False, expanddim=None, **kw):
         expanddim = DimRep("INDEX", 1)
     filehandle.attrs["hftools file version"] = "0.2"
     for k, v in db.ivardata.items():
-        create_dataset(filehandle, k, v.data)
-        filehandle[k].attrs["dimtype"] = v.__class__.__name__
+        ek = escape_varname(k)
+        create_dataset(filehandle, ek, v.data)
+        filehandle[ek].attrs["dimtype"] = v.__class__.__name__
         if v.unit:
-            filehandle[k].attrs["unit"] = v.unit
+            filehandle[ek].attrs["unit"] = v.unit
         if v.outputformat:
-            filehandle[k].attrs["outputformat"] = v.outputformat
+            filehandle[ek].attrs["outputformat"] = v.outputformat
 
     if expandable:
         data = np.array(expanddim.data)
@@ -134,22 +149,23 @@ def save_hdf5_handle(db, filehandle, expandable=False, expanddim=None, **kw):
             filehandle[expanddim.name].attrs["outputformat"] = outputformat
 
     for k, v in db.vardata.items():
+        ek = escape_varname(k)
         if expandable and v.ndim == 0:
             v = v.add_dim(expanddim)
         elif expandable:
             v = v.add_dim(expanddim, 1)
         else:
             pass
-        create_dataset(filehandle, k, v, expandable=expandable)
+        create_dataset(filehandle, ek, v, expandable=expandable)
         for idx, dv in enumerate(v.dims):
-            filehandle[k].dims.create_scale(filehandle[dv.name])
-            filehandle[k].dims[idx].attach_scale(filehandle[dv.name])
+            filehandle[ek].dims.create_scale(filehandle[dv.name])
+            filehandle[ek].dims[idx].attach_scale(filehandle[dv.name])
 
-        filehandle[k].attrs["arraytype"] = v.__class__.__name__
+        filehandle[ek].attrs["arraytype"] = v.__class__.__name__
         if v.unit:
-            filehandle[k].attrs["unit"] = v.unit
+            filehandle[ek].attrs["unit"] = v.unit
         if v.outputformat:
-            filehandle[k].attrs["outputformat"] = v.outputformat
+            filehandle[ek].attrs["outputformat"] = v.outputformat
 
 
 def save_hdf5(db, h5file, expandable=False, expanddim=None, **kw):
@@ -172,12 +188,13 @@ def append_hdf5(db, filehandle, expanddim=None, **kw):
     filehandle[expanddim.name].value[-1] = idx
 
     for k, v in filehandle.items():
-        if k in db.ivardata or k == expanddim.name:
+        uk = unescape_varname(k)
+        if uk in db.ivardata or uk == expanddim.name:
             continue
-        if k not in db.vardata:
-            raise ValueError("Variable %r missing in db, can not append" % k)
+        if uk not in db.vardata:
+            raise ValueError("Variable %r missing in db, can not append" % uk)
         diskdata = filehandle[k]
         ax = diskdata.maxshape.index(None)
         expand_dataset(diskdata, 1, ax)
         s = (slice(None),) * ax + (diskdata.shape[ax] - 1,)
-        diskdata[s] = db[k]
+        diskdata[s] = cast_arrays_to_hdf5(db[uk])
