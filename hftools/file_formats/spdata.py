@@ -115,7 +115,7 @@ class ReadSPFileFormat(ReadFileFormat):
         for comments, header, data in stream:
             db = DataBlock()
             db.comments = Comments(comments)
-            header = header[0].strip().split("\t")
+            header = [x.strip() for x in header[0].strip().split("\t")]
             Nhead = len(header)
             #data = np.array(data)
             if Nhead != len(data[0]):
