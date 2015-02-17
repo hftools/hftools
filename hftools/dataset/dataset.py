@@ -504,6 +504,8 @@ class DataBlock(object):
         if isnumber:
             if np.issubdtype(self.ivardata[name].data.dtype, np.int):
                 fmt = "%d "  # space ensures split will give two fields
+            elif np.issubdtype(self.ivardata[name].data.dtype, np.datetime64):
+                fmt = "%s "  # space ensures split will give two fields
             else:
                 fmt = SIFormat(unit=self.ivardata[name].unit, digs=None)
             tofmt["shape"] = "<%s>" % self.ivardata[name].data.shape[0]
