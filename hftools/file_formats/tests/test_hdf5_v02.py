@@ -94,7 +94,7 @@ class Test_hdf5_data_save_exceptions(TestCase):
             f.unlink()
         p.removedirs()
 
-    def test_1(self):
+    def xtest_1(self):  # pragma: no cover   disabled
         d = DataBlock()
         d["b/a"] = hfarray([2], dims=(DimSweep("a", 1),))
         fname = testpath / "testdata/hdf5/v02/savetest/slask.hdf5"
