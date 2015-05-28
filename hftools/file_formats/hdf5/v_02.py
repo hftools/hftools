@@ -50,7 +50,7 @@ def getvar(db, key):
             dimcls = dimrep[x[0].attrs.get("dimtype", "DimSweep")]
             dim = dimcls(x[0].name.strip("/"),
                          x[0][...],
-                         unit=x[0].attrs.get("unit", None))
+                         unit = x[0].attrs.get("unit", None))
             dims.append(dim)
 
     unit = X.attrs.get("unit", None)

@@ -16,6 +16,7 @@ from hftools.testing import TestCase
 import hftools.dataset.arrayobj as aobj
 
 from hftools.testing import random_value_array_from_dims
+from hftools.py3compat import PY3
 
 basepath = os.path.split(__file__)[0]
 
@@ -98,9 +99,9 @@ class Test_binary_ops_sub(Test_binary_ops):
 class Test_binary_ops_mul(Test_binary_ops):
     op = operator.mul
 
-
-class Test_binary_ops_div(Test_binary_ops):
-    op = operator.div
+if not PY3:
+    class Test_binary_ops_div(Test_binary_ops):
+        op = operator.div
 
 
 class Test_binary_ops_tdiv(Test_binary_ops):
