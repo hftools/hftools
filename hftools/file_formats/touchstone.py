@@ -208,6 +208,7 @@ def format_touchstone_block(sweepvars, header, fmts,
                             columns, blockname, comments):
     for comment in comments.fullcomments:
         yield ["!" + comment]
+
     yield [comments.property.get("INFO", ["#HZ S RI R 50"])[0]]
     header, columns = make_col_from_matrix(header, columns,
                                            "%s[%s,%s]", fortranorder=True)
@@ -227,8 +228,29 @@ def save_touchstone(db, filename):
     """Write a Datablock to a touchstone-format file with name filename.
     """
     with open(filename, "w") as fil:
-        for rad in db_iterator(db, format_touchstone_block):
-            fil.write("\t".join(rad))
+        for comment in db.comments.fullcomments:
+            fil.write("!" + comment)
+            fil.write("\n")
+        for k, v in db.vardata.items():
+            if v.shape == ():
+                fil.write("!%s: %s\n" % (k, v.outputformat % v))
+#            fil.write("\t".join(rad))
+        fil.write("#HZ S RI R 50\n")
+
+
+        header, columns = make_col_from_matrix([db.S.dims[0].name, "S"], [hfarray(db.S.dims[0]), db.S],
+                                               "%s[%s,%s]", fortranorder=True)
+        fmts = [x.outputformat for x in columns]
+
+        for row in zip(*columns):
+            out = []
+            for elem, fmt in zip(row, fmts):
+                if iscomplexobj(elem):
+                    out.append(fmt % elem.real)
+                    out.append(fmt % elem.imag)
+                else:
+                    out.append(fmt % elem)
+            fil.write("\t".join(out))
             fil.write("\n")
 
 
