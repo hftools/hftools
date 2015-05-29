@@ -32,8 +32,8 @@ class Test_add_var_guess(TestCase):
 
     def test_1(self):
         helper.add_var_guess("R", "Ohm")
-        self.assertDictContainsSubset(dict(R="Ohm"),
-                                      helper._varname_unit_guess_db)
+        self.assertIn("R", helper._varname_unit_guess_db)
+        self.assertEqual("Ohm", helper._varname_unit_guess_db["R"])
 
 
 class Test_guess_unit_from_varname(TestCase):
