@@ -30,8 +30,12 @@ from hftools.dataset.dim import DimBase, DimSweep, DimRep,\
     DimMatrix_i, DimMatrix_j, DiagAxis
 from hftools.utils import warn, stable_uniq
 from hftools.dataset.helper import guess_unit_from_varname
-from hftools.py3compat import cast_unicode, cast_str, string_types
+from hftools.py3compat import cast_unicode, cast_str, string_types, PY3
 
+if PY3:
+    from itertools import zip_longest
+else:
+    from itertools import izip_longest as zip_longest
 
 class DataBlockError(Exception):
     pass
@@ -591,9 +595,7 @@ class DataBlock(object):
             report_strings.extend(varrows)
         else:
             fmt = "%%-%ds - %%-%ds" % (varlen, ivarlen)
-            for var, ivar in itertools.izip_longest(varrows,
-                                                    ivarrows,
-                                                    fillvalue=""):
+            for var, ivar in zip_longest(varrows, ivarrows, fillvalue=""):
                 report_strings.append(fmt % (var, ivar))
         return (u"\n").join(report_strings)
 

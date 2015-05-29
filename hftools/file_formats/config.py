@@ -357,7 +357,7 @@ class LexicalLoader(yaml.SafeLoader):
             key = self.construct_object(key_node, deep=deep)
             try:
                 hash(key)
-            except TypeError, exc:
+            except TypeError as exc:
                 msg = "while constructing a mapping"
                 msg2 = "found unacceptable key (%s)" % exc
                 raise yaml.ConstructorError(msg, node.start_mark,

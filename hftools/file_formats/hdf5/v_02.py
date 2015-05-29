@@ -1,4 +1,4 @@
-# -*- coding: ISO-8859-1 -*-
+# -*- coding: utf-8 -*-
 #-----------------------------------------------------------------------------
 # Copyright (c) 2014, HFTools Development Team.
 #
@@ -16,7 +16,7 @@ except ImportError:  # pragma: no cover
 import numpy as np
 from hftools.dataset import DimRep, DimSweep, hfarray, DataBlock,\
     DimMatrix_i, DimMatrix_j, DimPartial
-from hftools.py3compat import PY3
+from hftools.py3compat import PY3, cast_unicode
 from hftools.dataset.comments import Comments
 #from hftools.file_formats.hdf5.hdf5 import hdf5context
 from .helper import hdf5context
@@ -47,10 +47,10 @@ def getvar(db, key):
     dims = []
     for x in X.dims:
         if len(x):
-            dimcls = dimrep[x[0].attrs.get("dimtype", "DimSweep")]
+            dimcls = dimrep[cast_unicode(x[0].attrs.get("dimtype", "DimSweep"))]
             dim = dimcls(x[0].name.strip("/"),
                          x[0][...],
-                         unit=x[0].attrs.get("unit", None))
+                         unit = x[0].attrs.get("unit", None))
             dims.append(dim)
 
     unit = X.attrs.get("unit", None)

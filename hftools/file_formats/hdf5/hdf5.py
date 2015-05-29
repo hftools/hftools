@@ -12,7 +12,7 @@ try:
 except ImportError:  # pragma: no cover
     import_failed = True
     h5py = None
-
+from hftools.py3compat import cast_unicode
 from . import v_01
 from . import v_02
 from .helper import hdf5context
@@ -42,7 +42,7 @@ else:
 
     def read_hdf5(h5file, name="datablock", **kw):
         with hdf5context(h5file) as fil:
-            version = fil.attrs.get("hftools file version", "")
+            version = cast_unicode(fil.attrs.get("hftools file version", ""))
             if version == "0.2":
                 return v_02.read_hdf5(fil, name=name, **kw)
             else:

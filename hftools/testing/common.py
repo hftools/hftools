@@ -9,15 +9,11 @@
 import doctest
 import random
 import warnings
+import unittest
 
 from hftools.py3compat import PY3
 
-if PY3:
-    import unittest
-    from unittest import skip, expectedFailure
-else:
-    import unittest2 as unittest
-    from unittest2 import skip, expectedFailure
+from unittest import skip, expectedFailure
 
 
 import numpy as np

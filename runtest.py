@@ -5,12 +5,11 @@
 from __future__ import print_function
 import os
 import sys
+import unittest
 
 if sys.version_info[0] >= 3:
-    import unittest
     configpath = "coverage-config-PY3.txt"
 else:
-    import unittest2 as unittest
     configpath = "coverage-config-PY2.txt"
 
 

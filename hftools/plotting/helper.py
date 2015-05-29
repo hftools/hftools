@@ -20,6 +20,7 @@ import pylab
 from matplotlib._pylab_helpers import Gcf
 from matplotlib.backends.backend_pdf import PdfPages
 import hftools.math
+from hftools.py3compat import text_type
 from hftools.constants.si_units import si_exp_to_prefixes, _help_format_sci
 from hftools.dataset import hfarray, remove_tail
 from hftools.math import delay, unwrap_phase
@@ -316,7 +317,7 @@ class HFToolsAxes(Axes):
         vars = args[:2]
         args = args[2:]
 
-        if len(vars) == 2 and isinstance(vars[1], (str, unicode)):
+        if len(vars) == 2 and isinstance(vars[1], text_type):
             args = (vars[1],) + args
             vars = vars[:1]
 
@@ -571,7 +572,7 @@ class ComplexPolarAxes(PolarAxes):
         projection = self.name
         vars = args[:2]
         args = args[2:]
-        if len(vars) == 2 and isinstance(vars[1], (str, unicode)):
+        if len(vars) == 2 and isinstance(vars[1], text_type):
             args = (vars[1],) + args
             vars = vars[:1]
 
